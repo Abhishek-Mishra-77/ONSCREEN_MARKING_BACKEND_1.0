@@ -4,6 +4,9 @@
 #
 # MONGO_URL=mongodb+srv://abhishekomr07:omr1234567@cluster0.lxapa.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
 # PORT=8000
+# AUTHMAIL=abhishekomr07@gmail.com
+# AUTHPASSWORD=jxfh xiae vksm kpoa
+# JWT_SECRET=onscreenmarking
 
 
 

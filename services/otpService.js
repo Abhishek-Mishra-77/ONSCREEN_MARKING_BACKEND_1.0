@@ -3,14 +3,14 @@ import nodemailer from 'nodemailer';
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-        user: 'abhishekomr07@gmail.com',
-        pass: 'jxfh xiae vksm kpoa'
+        user: process.env.AUTHMAIL,
+        pass: process.env.AUTHPASSWORD
     }
 });
 
 const sendOtpEmail = async (email, otpCode) => {
     const mailOptions = {
-        from: 'abhishekomr07@gmail.com',
+        from: process.env.AUTHMAIL,
         to: email,
         subject: 'Your OTP Code',
         text: `Your OTP code is ${otpCode}.`

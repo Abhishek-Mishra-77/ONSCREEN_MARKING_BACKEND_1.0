@@ -2,6 +2,7 @@ import Otp from '../../models/authModels/otp.js';
 import User from '../../models/authModels/User.js';
 import bcrypt from 'bcryptjs';
 import sendOtpEmail from '../../services/otpService.js';
+import jwt from "jsonwebtoken";
 
 
 const createUser = async (req, res) => {
@@ -48,6 +49,7 @@ const createUser = async (req, res) => {
 
 const userLogin = async (req, res) => {
     const { email, password, type } = req.body;
+
 
     if (!email) {
         return res.status(400).json({ message: "Email is required" });
@@ -121,7 +123,14 @@ const verifyOtp = async (req, res) => {
 
         if (otpRecord.otp === otp) {
             await Otp.deleteOne({ user: userId, otp });
-            res.status(200).json({ message: "OTP verified successfully" });
+            const user = await User.findById(userId);
+            const token = jwt.sign(
+                { userId: user._id, email: user.email, role: user.role },
+                process.env.JWT_SECRET,
+                { expiresIn: "1h" }
+            );
+
+            res.status(200).json({ message: "OTP verified successfully", token });
         } else {
             otpRecord.attempts += 1;
             await otpRecord.save();
