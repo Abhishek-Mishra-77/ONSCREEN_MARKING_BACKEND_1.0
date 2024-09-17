@@ -68,7 +68,14 @@ const userLogin = async (req, res) => {
             if (!isPasswordValid) {
                 return res.status(401).json({ message: "Invalid email or password" });
             }
-            res.status(200).json({ message: "Login successful", user });
+
+            const token = jwt.sign(
+                { userId: user._id, email: user.email, role: user.role },
+                process.env.JWT_SECRET,
+                { expiresIn: "1h" }
+            );
+
+            res.status(200).json({ message: "Login successful", token: token });
         } else if (type === 'otp') {
             const user = await User.findOne({ email });
 
