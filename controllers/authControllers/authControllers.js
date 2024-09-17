@@ -87,7 +87,7 @@ const userLogin = async (req, res) => {
                 otpAttempts: 0
             });
 
-            res.status(200).json({ message: "OTP sent to your email." });
+            res.status(200).json({ message: "OTP sent to your email.", userId: user._id });
         }
     } catch (error) {
         console.error("Error during login:", error);
