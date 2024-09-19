@@ -17,9 +17,9 @@ app.use(cors())
 app.use("/api/auth", authRoutes);
 
 
-
 const PORT = process.env.PORT || 5000;
 // Start the server and connect to the database
+
 app.listen(PORT, async () => {
     await database();
     await createInitialUser();
@@ -40,7 +40,8 @@ async function createInitialUser() {
                 email: "abhishekomr07@gmail.com",
                 password: hashedPassword,
                 mobile: "8577887978",
-                role: "admin"
+                role: "admin",
+                permissions: []
             });
 
             await newUser.save();

@@ -6,9 +6,9 @@ import jwt from "jsonwebtoken";
 
 
 const createUser = async (req, res) => {
-    const { name, email, password, mobile, role } = req.body;
+    const { name, email, password, mobile, role, permissions } = req.body;
 
-    if (!name || !email || !password || !mobile || !role) {
+    if (!name || !email || !password || !mobile || !role || !permissions) {
         return res.status(400).json({ message: "All fields are required" });
     }
 
@@ -27,7 +27,8 @@ const createUser = async (req, res) => {
             email,
             password: hashedPassword,
             mobile,
-            role
+            role,
+            permissions
         });
         await newUser.save();
 
@@ -71,10 +72,10 @@ const userLogin = async (req, res) => {
             const token = jwt.sign(
                 { userId: user._id, email: user.email, role: user.role },
                 process.env.JWT_SECRET,
-                { expiresIn: "1h" }
+                { expiresIn: "24h" }
             );
 
-            res.status(200).json({ message: "Login successful", token: token });
+            res.status(200).json({ message: "Login successful", token: token, userId: user._id });
         } else if (type === 'otp') {
             const user = await User.findOne({ email });
 
@@ -133,7 +134,7 @@ const verifyOtp = async (req, res) => {
             const token = jwt.sign(
                 { userId: user._id, email: user.email, role: user.role },
                 process.env.JWT_SECRET,
-                { expiresIn: "1h" }
+                { expiresIn: "24h" }
             );
 
             res.status(200).json({ message: "OTP verified successfully", token, user: user._id });
@@ -207,4 +208,5 @@ const getAllUsers = async (req, res) => {
     }
 }
 
-export { createUser, userLogin, verifyOtp, forgotPassword, removeUser, getUserById,getAllUsers };
+export { createUser, userLogin, verifyOtp, forgotPassword, removeUser, getUserById, getAllUsers };
+

@@ -2,7 +2,15 @@ import express from "express";
 const router = express.Router();
 
 import authMiddleware from "../../Middlewares/authMiddleware.js";
-import { createUser, userLogin, verifyOtp, forgotPassword, removeUser, getUserById, getAllUsers } from "../../controllers/authControllers/authControllers.js";
+import {
+    createUser,
+    userLogin,
+    verifyOtp,
+    forgotPassword,
+    removeUser,
+    getUserById,
+    getAllUsers
+} from "../../controllers/authControllers/authControllers.js";
 
 router.post('/signup', createUser);
 router.post('/signin', userLogin);
