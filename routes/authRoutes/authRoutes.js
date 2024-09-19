@@ -9,16 +9,18 @@ import {
     forgotPassword,
     removeUser,
     getUserById,
-    getAllUsers
+    getAllUsers,
+    updateUserDetails
 } from "../../controllers/authControllers/authControllers.js";
 
-router.post('/signup', createUser);
+router.post('/signup', authMiddleware, createUser);
 router.post('/signin', userLogin);
 router.post('/verify', verifyOtp);
 router.put('/forgotpassword', forgotPassword);
 router.get('/:id', authMiddleware, getUserById);
 router.get('/', authMiddleware, getAllUsers);
 router.delete('/removeUser/:id', authMiddleware, removeUser);
+router.put('/update/:id', authMiddleware, updateUserDetails);
 
 export default router;
 
