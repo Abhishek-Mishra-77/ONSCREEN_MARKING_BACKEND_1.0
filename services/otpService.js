@@ -8,6 +8,7 @@ const transporter = nodemailer.createTransport({
     }
 });
 
+
 const sendOtpEmail = async (email, otpCode) => {
     const mailOptions = {
         from: process.env.AUTHMAIL,

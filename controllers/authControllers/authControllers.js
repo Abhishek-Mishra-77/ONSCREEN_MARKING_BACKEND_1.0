@@ -201,6 +201,9 @@ const getUserById = async (req, res) => {
 const getAllUsers = async (req, res) => {
     try {
         const users = await User.find();
+        if (!users) {
+            return res.status(404).json({ message: "No users found" });
+        }
         res.status(200).json(users);
     } catch (error) {
         console.error("Error fetching users:", error);
@@ -225,6 +228,73 @@ const updateUserDetails = async (req, res) => {
 
 }
 
+
+const createUsersByCsvFile = async (req, res) => {
+    try {
+        const users = req.body;
+
+        if (!users || users.length === 0) {
+            return res.status(400).json({ message: "No users found in the file." });
+        }
+
+        let successCount = 0;
+        let failedUsers = [];
+
+        // Iterate through each user from the CSV file
+        for (const user of users) {
+            const { name, email, password, mobile, role, permissions, ...otherFields } = user;
+
+            // Validate required fields
+            if (!name || !email || !password || !mobile || !role || !permissions) {
+                failedUsers.push({ email, reason: "Missing required fields" });
+                continue; // Skip this user if required fields are missing
+            }
+
+            // Check if the email already exists in the database
+            const existingUser = await User.findOne({ email });
+            if (existingUser) {
+                failedUsers.push({ email, reason: "Email already exists" });
+                continue; // Skip the user if email already exists
+            }
+
+            // Encrypt the password
+            const hashedPassword = await bcrypt.hash(password, 10);
+
+            // Create a new user with encrypted password and other required fields
+            const newUser = new User({
+                name,
+                email,
+                password: hashedPassword,
+                mobile,
+                role,
+                permissions,
+                ...otherFields
+            });
+
+            try {
+                await newUser.save();
+                successCount++;
+            } catch (saveError) {
+                failedUsers.push({ email, reason: `Failed to save user: ${saveError.message}` });
+            }
+        }
+
+        if (failedUsers.length > 0) {
+            return res.status(207).json({
+                message: `Some users were not created successfully`,
+                successCount,
+                failedUsers
+            });
+        }
+
+        return res.status(200).json({ message: "All users created successfully", successCount });
+
+    } catch (error) {
+        console.error("Error creating users:", error);
+        return res.status(500).json({ message: "Failed to create users", error: error.message });
+    }
+};
+
 export {
     createUser,
     userLogin,
@@ -233,6 +303,7 @@ export {
     removeUser,
     getUserById,
     getAllUsers,
-    updateUserDetails
+    updateUserDetails,
+    createUsersByCsvFile
 };
 
