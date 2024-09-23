@@ -21,7 +21,7 @@ router.put('/forgotpassword', forgotPassword);
 router.get('/:id', authMiddleware, getUserById);
 router.get('/', authMiddleware, getAllUsers);
 router.delete('/removeUser/:id', authMiddleware, removeUser);
-router.put('/update/:id', authMiddleware, updateUserDetails);
+router.put('/update/:id', updateUserDetails);
 router.post('/createuserbycsv', createUsersByCsvFile);
 
 export default router;
