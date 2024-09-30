@@ -8,7 +8,6 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-
 const sendOtpEmail = async (email, otpCode) => {
     const mailOptions = {
         from: process.env.AUTHMAIL,
@@ -37,7 +36,5 @@ const sendOtpEmail = async (email, otpCode) => {
         throw new Error('Failed to send OTP email');
     }
 };
-
-
 
 export default sendOtpEmail;

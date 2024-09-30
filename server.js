@@ -7,6 +7,7 @@ import database from "./utils/database.js"
 
 import User from "./models/authModels/User.js"
 import authRoutes from "./routes/authRoutes/authRoutes.js";
+import courseRoutes from "./routes/courseRoutes/courseRoute.js";
 
 dotenv.config();
 const app = express();
@@ -15,6 +16,7 @@ app.use(cors())
 
 
 app.use("/api/auth", authRoutes);
+app.use("/api/courses", courseRoutes);
 
 
 const PORT = process.env.PORT || 5000;
