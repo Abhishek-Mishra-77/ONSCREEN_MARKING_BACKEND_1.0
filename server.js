@@ -43,7 +43,7 @@ async function createInitialUser() {
                 password: hashedPassword,
                 mobile: "8577887978",
                 role: "admin",
-                permissions: []
+                permissions: ["Main Dashboard", "Courses", "Course Detail", "Profile", "Users", "Create User", "Upload CSV File"]
             });
 
             await newUser.save();

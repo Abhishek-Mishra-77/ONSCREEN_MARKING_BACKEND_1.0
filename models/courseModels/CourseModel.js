@@ -14,15 +14,6 @@ const subjectSchema = new mongoose.Schema({
     }
 });
 
-// Define the schema for each semester within a course
-const semesterSchema = new mongoose.Schema({
-    semesterNumber: {
-        type: Number,
-        required: true,
-    },
-    subjects: [subjectSchema]
-});
-
 // Define the schema for the academic session
 const sessionSchema = new mongoose.Schema({
     sessionName: {
@@ -56,7 +47,7 @@ const courseSchema = new mongoose.Schema({
         type: Number,
         required: true,
     },
-    semesters: [semesterSchema],
+    courses: [subjectSchema],
     session: sessionSchema,
     isActive: {
         type: Boolean,
