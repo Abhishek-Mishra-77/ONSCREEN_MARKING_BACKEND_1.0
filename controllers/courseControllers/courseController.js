@@ -1,25 +1,18 @@
 import Course from "../../models/courseModels/CourseModel.js";
 
-// Validate course data
-const validateCourseData = ({ name, courseName, courseCode, duration, sessionDuration, year, startDate, endDate, subjects }) => {
-    if (!name || !courseName || !courseCode || !duration || !sessionDuration || !year || !startDate || !endDate || !Array.isArray(subjects) || subjects.length === 0) {
-        return 'All fields are required. Please ensure that name, courseName, courseCode, duration, sessionDuration, year, startDate, endDate, and subjects are provided.';
-    }
+const validateCourseData = (courseData) => {
+    console.log("Received course data:", courseData);
+    const { class: courseClass, courseName, courseCode, duration, session, year, subjects } = courseData;
 
-    if (typeof duration !== 'number' || duration <= 0) {
-        return 'Duration must be a valid number greater than 0.';
-    }
-
-    if (typeof sessionDuration !== 'number' || sessionDuration <= 0) {
-        return 'Session duration must be a valid number greater than 0.';
-    }
-
-    if (!Date.parse(startDate) || !Date.parse(endDate)) {
-        return 'Invalid date data. Please provide valid startDate and endDate.';
+    if (!courseClass?.trim() || !courseName?.trim() || !courseCode?.trim() ||
+        typeof duration !== 'number' || duration <= 0 ||
+        typeof session !== 'number' || session <= 0 ||
+        !year?.trim() || !Array.isArray(subjects) || subjects.length === 0) {
+        return 'All fields except startDate, endDate, and isActive are required. Please ensure that class, courseName, courseCode, duration, session, year, and subjects are provided.';
     }
 
     for (let subject of subjects) {
-        if (!subject.subjectName || !subject.subjectCode) {
+        if (!subject.subjectName?.trim() || !subject.subjectCode?.trim()) {
             return 'Each subject must have a valid subjectName and subjectCode.';
         }
     }
@@ -29,15 +22,18 @@ const validateCourseData = ({ name, courseName, courseCode, duration, sessionDur
 
 // Save or update course data
 const saveOrUpdateCourse = async (courseData, course) => {
-    course.name = courseData.name;
-    course.courseName = courseData.courseName;
-    course.courseCode = courseData.courseCode;
-    course.duration = courseData.duration;
-    course.subjects = courseData.subjects;
-    course.sessionDuration = courseData.sessionDuration;
-    course.year = courseData.year;
-    course.startDate = courseData.startDate;
-    course.endDate = courseData.endDate;
+    Object.assign(course, {
+        class: courseData.class,
+        courseName: courseData.courseName,
+        courseCode: courseData.courseCode,
+        duration: courseData.duration,
+        session: courseData.session,
+        subjects: courseData.subjects,
+        year: courseData.year,
+        startDate: courseData.startDate || null,
+        endDate: courseData.endDate || null,
+        isActive: courseData.isActive !== undefined ? courseData.isActive : true,
+    });
     return await course.save();
 };
 
@@ -53,10 +49,10 @@ const createCourse = async (req, res) => {
 
     try {
         const savedCourse = await saveOrUpdateCourse(req.body, newCourse);
-        res.status(201).json(savedCourse);
+        return res.status(201).json(savedCourse);
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: 'Server error occurred while creating the course.' });
+        return res.status(500).json({ error: 'An error occurred while creating the course.' });
     }
 };
 
@@ -71,16 +67,15 @@ const updateCourse = async (req, res) => {
         }
 
         const validationError = validateCourseData(req.body);
-
         if (validationError) {
             return res.status(400).json({ error: validationError });
         }
 
         const updatedCourse = await saveOrUpdateCourse(req.body, course);
-        res.status(200).json(updatedCourse);
+        return res.status(200).json(updatedCourse);
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: 'Server error occurred while updating the course.' });
+        return res.status(500).json({ error: 'An error occurred while updating the course.' });
     }
 };
 
@@ -91,7 +86,7 @@ const getAllCourses = async (req, res) => {
         return res.status(200).json(courses);
     } catch (error) {
         console.error(error);
-        return res.status(500).json({ error: 'Server error occurred while retrieving courses.' });
+        return res.status(500).json({ error: 'An error occurred while retrieving courses.' });
     }
 };
 
@@ -107,7 +102,7 @@ const getCourseById = async (req, res) => {
         return res.status(200).json(course);
     } catch (error) {
         console.error(error);
-        return res.status(500).json({ error: 'Server error occurred while retrieving the course.' });
+        return res.status(500).json({ error: 'An error occurred while retrieving the course.' });
     }
 };
 
@@ -123,7 +118,7 @@ const removeCourse = async (req, res) => {
         return res.status(200).json({ message: 'Course successfully removed.' });
     } catch (error) {
         console.error(error);
-        return res.status(500).json({ error: 'Server error occurred while removing the course.' });
+        return res.status(500).json({ error: 'An error occurred while removing the course.' });
     }
 };
 

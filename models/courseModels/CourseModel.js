@@ -14,12 +14,7 @@ const subjectSchema = new mongoose.Schema({
 });
 
 const courseSchema = new mongoose.Schema({
-    name: {
-        type: String,
-        required: true,
-        trim: true,
-    },
-    courseName: {
+    class: {
         type: String,
         required: true,
         trim: true,
@@ -35,7 +30,7 @@ const courseSchema = new mongoose.Schema({
         type: Number,
         required: true,
     },
-    sessionDuration: {
+    session: {
         type: Number,
         required: true,
         trim: true,
@@ -47,11 +42,11 @@ const courseSchema = new mongoose.Schema({
     },
     startDate: {
         type: Date,
-        required: true,
+        default: null,
     },
     endDate: {
         type: Date,
-        required: true,
+        default: null,
     },
     isActive: {
         type: Boolean,
@@ -67,6 +62,7 @@ const courseSchema = new mongoose.Schema({
     }
 });
 
+// Update the updatedAt field before saving
 courseSchema.pre('save', function (next) {
     this.updatedAt = Date.now();
     next();

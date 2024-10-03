@@ -20,7 +20,6 @@ app.use("/api/courses", courseRoutes);
 
 
 const PORT = process.env.PORT || 5000;
-// Start the server and connect to the database
 
 app.listen(PORT, async () => {
     await database();
@@ -36,7 +35,7 @@ async function createInitialUser() {
 
         if (!existingUser) {
             const salt = await bcrypt.genSalt(10);
-            const hashedPassword = await bcrypt.hash("123456", salt);
+            const hashedPassword = await bcrypt.hash("12345678", salt);
             const newUser = new User({
                 name: "Abhishek Mishra",
                 email: "abhishekomr07@gmail.com",
