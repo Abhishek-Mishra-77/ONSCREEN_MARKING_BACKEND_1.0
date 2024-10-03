@@ -1,22 +1,46 @@
 import mongoose from "mongoose";
 
-// Define the schema for each subject within a semester
 const subjectSchema = new mongoose.Schema({
-    name: {
+    subjectName: {
         type: String,
         required: true,
         trim: true,
     },
-    code: {
+    subjectCode: {
         type: String,
         required: true,
         trim: true,
     }
 });
 
-// Define the schema for the academic session
-const sessionSchema = new mongoose.Schema({
-    sessionName: {
+const courseSchema = new mongoose.Schema({
+    name: {
+        type: String,
+        required: true,
+        trim: true,
+    },
+    courseName: {
+        type: String,
+        required: true,
+        trim: true,
+    },
+    courseCode: {
+        type: String,
+        required: true,
+        unique: true,
+        trim: true,
+    },
+    subjects: [subjectSchema],
+    duration: {
+        type: Number,
+        required: true,
+    },
+    sessionDuration: {
+        type: Number,
+        required: true,
+        trim: true,
+    },
+    year: {
         type: String,
         required: true,
         trim: true,
@@ -28,27 +52,7 @@ const sessionSchema = new mongoose.Schema({
     endDate: {
         type: Date,
         required: true,
-    }
-});
-
-const courseSchema = new mongoose.Schema({
-    name: {
-        type: String,
-        required: true,
-        trim: true,
     },
-    code: {
-        type: String,
-        required: true,
-        unique: true,
-        trim: true,
-    },
-    duration: {
-        type: Number,
-        required: true,
-    },
-    courses: [subjectSchema],
-    session: sessionSchema,
     isActive: {
         type: Boolean,
         default: true,
@@ -63,7 +67,6 @@ const courseSchema = new mongoose.Schema({
     }
 });
 
-// Middleware to auto-update the `updatedAt` field before saving
 courseSchema.pre('save', function (next) {
     this.updatedAt = Date.now();
     next();
