@@ -1,34 +1,22 @@
-import Course from "../../models/courseModels/CourseModel.js";
+import Course from "../../models/classModel/classModel.js";
 
+// Validate course data
 const validateCourseData = (courseData) => {
-    console.log("Received course data:", courseData);
-    const { class: courseClass, courseName, courseCode, duration, session, year, subjects } = courseData;
+    const { className, classCode, duration, session, year } = courseData;
 
-    if (!courseClass?.trim() || !courseName?.trim() || !courseCode?.trim() ||
-        typeof duration !== 'number' || duration <= 0 ||
-        typeof session !== 'number' || session <= 0 ||
-        !year?.trim() || !Array.isArray(subjects) || subjects.length === 0) {
-        return 'All fields except startDate, endDate, and isActive are required. Please ensure that class, courseName, courseCode, duration, session, year, and subjects are provided.';
+    if (!className || !classCode || !duration || !session || !year) {
+        return 'All fields are required';
     }
-
-    for (let subject of subjects) {
-        if (!subject.subjectName?.trim() || !subject.subjectCode?.trim()) {
-            return 'Each subject must have a valid subjectName and subjectCode.';
-        }
-    }
-
     return null;
 };
 
 // Save or update course data
 const saveOrUpdateCourse = async (courseData, course) => {
     Object.assign(course, {
-        class: courseData.class,
-        courseName: courseData.courseName,
-        courseCode: courseData.courseCode,
+        className: courseData.className,
+        classCode: courseData.classCode,
         duration: courseData.duration,
         session: courseData.session,
-        subjects: courseData.subjects,
         year: courseData.year,
         startDate: courseData.startDate || null,
         endDate: courseData.endDate || null,
@@ -40,15 +28,13 @@ const saveOrUpdateCourse = async (courseData, course) => {
 // Create a new course
 const createCourse = async (req, res) => {
     const validationError = validateCourseData(req.body);
-
     if (validationError) {
         return res.status(400).json({ error: validationError });
     }
 
     const newCourse = new Course(req.body);
-
     try {
-        const savedCourse = await saveOrUpdateCourse(req.body, newCourse);
+        const savedCourse = await newCourse.save();
         return res.status(201).json(savedCourse);
     } catch (err) {
         console.error(err);

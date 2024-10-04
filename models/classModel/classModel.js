@@ -1,31 +1,17 @@
 import mongoose from "mongoose";
 
-const subjectSchema = new mongoose.Schema({
-    subjectName: {
-        type: String,
-        required: true,
-        trim: true,
-    },
-    subjectCode: {
-        type: String,
-        required: true,
-        trim: true,
-    }
-});
-
 const courseSchema = new mongoose.Schema({
-    class: {
+    className: {
         type: String,
         required: true,
         trim: true,
     },
-    courseCode: {
+    classCode: {
         type: String,
         required: true,
         unique: true,
         trim: true,
     },
-    subjects: [subjectSchema],
     duration: {
         type: Number,
         required: true,
@@ -62,7 +48,6 @@ const courseSchema = new mongoose.Schema({
     }
 });
 
-// Update the updatedAt field before saving
 courseSchema.pre('save', function (next) {
     this.updatedAt = Date.now();
     next();
