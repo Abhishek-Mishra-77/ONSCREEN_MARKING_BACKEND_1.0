@@ -76,4 +76,16 @@ const updateSubject = async (req, res) => {
     }
 }
 
-    export { createSubject, removeSubject, getSubjectById, getAllSubjects,updateSubject };
+const getAllSubjectBasedOnClassId = async (req, res) => {
+    const { classId } = req.params;
+    try {
+        const subjects = await Subject.find({ classId });
+        return res.status(200).json(subjects);
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: "An error occurred while retrieving the subjects." });
+    }
+}
+
+
+export { createSubject, removeSubject, getSubjectById, getAllSubjects, updateSubject, getAllSubjectBasedOnClassId };
