@@ -1,8 +1,16 @@
 import express from "express";
 const router = express.Router();
 
-import { createSubject, removeSubject, getSubjectById, getAllSubjects, updateSubject, getAllSubjectBasedOnClassId } from "../../controllers/classControllers/subjectControllers.js";
+import {
+    createSubject,
+    removeSubject,
+    getSubjectById,
+    getAllSubjects,
+    updateSubject,
+    getAllSubjectBasedOnClassId
+} from "../../controllers/classControllers/subjectControllers.js";
 import authMiddleware from "../../Middlewares/authMiddleware.js";
+
 
 router.post("/create/subject", authMiddleware, createSubject);
 router.delete("/remove/subject/:id", authMiddleware, removeSubject);

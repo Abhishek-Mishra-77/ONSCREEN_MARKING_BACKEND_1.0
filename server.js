@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors"
 import bcrypt from "bcryptjs";
+import path from 'path';
 
 import database from "./utils/database.js"
 
@@ -9,16 +10,21 @@ import User from "./models/authModels/User.js"
 import authRoutes from "./routes/authRoutes/authRoutes.js";
 import classRoutes from "./routes/classRoutes/classRoute.js";
 import subjectRoutes from "./routes/subjectRoutes/subjectRoute.js";
+import questionRoutes from "./routes/schemeRoutes/questionRoutes.js";
 
 dotenv.config();
 const app = express();
 app.use(express.json());
 app.use(cors())
 
+// Serve static files from the 'uploads' directory
+const __dirname = path.resolve();
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/classes", classRoutes);
 app.use("/api/subjects", subjectRoutes);
+app.use("/api/scheme", questionRoutes);
 
 
 const PORT = process.env.PORT || 5000;
@@ -32,9 +38,7 @@ app.listen(PORT, async () => {
 // Function to create a user
 async function createInitialUser() {
     try {
-        // Check if a user with the provided email exists
         const existingUser = await User.findOne({ email: "abhishekomr07@gmail.com" });
-
         if (!existingUser) {
             const salt = await bcrypt.genSalt(10);
             const hashedPassword = await bcrypt.hash("12345678", salt);
