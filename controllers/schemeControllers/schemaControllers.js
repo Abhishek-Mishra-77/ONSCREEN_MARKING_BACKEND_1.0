@@ -25,6 +25,7 @@ const createSchema = async (req, res) => {
 const updateSchema = async (req, res) => {
     const { id } = req.params;
     const { name, totalQuestions, maxMarks, minMarks } = req.body;
+
     try {
         if (!name || !totalQuestions || !maxMarks || !minMarks) {
             return res.status(400).json({ message: "All fields are required" });
