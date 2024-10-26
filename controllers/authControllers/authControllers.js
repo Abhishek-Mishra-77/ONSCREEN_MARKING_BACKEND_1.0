@@ -50,7 +50,6 @@ const createUser = async (req, res) => {
 const userLogin = async (req, res) => {
     const { email, password, type } = req.body;
 
-
     if (!email) {
         return res.status(400).json({ message: "Email is required" });
     }

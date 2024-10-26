@@ -1,6 +1,5 @@
 import Schema from "../../models/schemeModel/schema.js";
 
-
 const createSchema = async (req, res) => {
     const { name, totalQuestions, maxMarks, minMarks } = req.body;
 
@@ -66,8 +65,11 @@ const getAllSchemas = async (req, res) => {
         const schemas = await Schema.find();
         return res.status(200).json(schemas);
     } catch (error) {
+
+        // Return the schema in the response
         console.error(error);
         return res.status(500).json({ message: "An error occurred while retrieving the schemas." });
+        // Log any errors and return a 500 response
     }
 }
 
