@@ -40,13 +40,13 @@ app.listen(PORT, async () => {
 // Function to create a user
 async function createInitialUser() {
     try {
-        const existingUser = await User.findOne({ email: "abhishekomr07@gmail.com" });
+        const existingUser = await User.findOne({ email: "abhishekomr077@gmail.com" });
         if (!existingUser) {
             const salt = await bcrypt.genSalt(10);
             const hashedPassword = await bcrypt.hash("12345678", salt);
             const newUser = new User({
                 name: "Abhishek Mishra",
-                email: "abhishekomr07@gmail.com",
+                email: "abhishekomr077@gmail.com",
                 password: hashedPassword,
                 mobile: "8577887978",
                 role: "admin",
