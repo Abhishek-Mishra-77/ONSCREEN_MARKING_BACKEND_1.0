@@ -10,7 +10,6 @@ import User from "./models/authModels/User.js"
 import authRoutes from "./routes/authRoutes/authRoutes.js";
 import classRoutes from "./routes/classRoutes/classRoute.js";
 import subjectRoutes from "./routes/subjectRoutes/subjectRoute.js";
-import questionRoutes from "./routes/schemeRoutes/questionRoutes.js";
 import schemaRoutes from "./routes/schemeRoutes/schemaRoutes.js";
 
 dotenv.config();
@@ -18,14 +17,12 @@ const app = express();
 app.use(express.json());
 app.use(cors())
 
-// Serve static files from the 'uploads' directory
 const __dirname = path.resolve();
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/classes", classRoutes);
 app.use("/api/subjects", subjectRoutes);
-app.use("/api/questions", questionRoutes);
 app.use("/api/schemas", schemaRoutes);
 
 
