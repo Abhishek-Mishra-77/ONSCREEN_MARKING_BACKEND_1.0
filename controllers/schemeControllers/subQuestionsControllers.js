@@ -11,3 +11,13 @@ const removeSubQuestionsBasedOnQuestionDefinitionId = async () => { }
 const getSubQuestionById = async (req, res) => { }
 
 const getAllSubQuestionsBasedOnQuestionDefinitionId = async (req, res) => { }
+
+
+export {
+    createSubQuestion,
+    updateSubQuestion,
+    removeSubQuestionById,
+    removeSubQuestionsBasedOnQuestionDefinitionId,
+    getSubQuestionById,
+    getAllSubQuestionsBasedOnQuestionDefinitionId
+}
