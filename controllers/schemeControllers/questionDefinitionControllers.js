@@ -10,3 +10,5 @@ const getQuestionDefinitionById = async (req, res) => { }
 
 const getAllQuestionDefinition = async (req, res) => { }
 
+const getAllQuestionDefinationBasedOnSchemeId = async (req, res) => { };
+

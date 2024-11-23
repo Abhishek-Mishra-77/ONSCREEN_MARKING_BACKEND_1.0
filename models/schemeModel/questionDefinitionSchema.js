@@ -91,34 +91,3 @@ const QuestionDefinition = mongoose.model(
 export default QuestionDefinition;
 
 
-// subQuestions: [
-//     {
-// questionDefinitionSchemaId: {
-//     type: mongoose.questionDefinitionSchema.Types.ObjectId,
-//     ref: "QuestionDefinition",
-//     required: true,
-// },
-//
-//         maxMarks: {
-//             type: Number,
-//             required: true,
-//         },
-//         minMarks: {
-//             type: Number,
-//             required: true,
-//         },
-// bonusMarks : {
-//     type : Number,
-//     default : 0
-// },
-// marksDiffrence: {
-//     type: Number,
-//     required: true
-// },
-// questionsName: {
-//     type: String,
-//     required: true
-// },
-
-//     },
-// ],

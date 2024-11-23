@@ -1,11 +1,13 @@
 import SubQuestion from "../../models/schemeModel/subQuestions.js";
 
-const createSubQuestion = async(req ,res) => {}
+const createSubQuestion = async (req, res) => { }
 
-const updateSubQuestion = async(req , res) => {}
+const updateSubQuestion = async (req, res) => { }
 
-const removeSubQuestion = async(req ,res) => {}
+const removeSubQuestionById = async (req, res) => { }
 
-const getSubQuestionById = async(req ,res) => {}
+const removeSubQuestionsBasedOnQuestionDefinitionId = async () => { }
 
-const getAllSubQuestion = async(req ,res ) =>{}
+const getSubQuestionById = async (req, res) => { }
+
+const getAllSubQuestionsBasedOnQuestionDefinitionId = async (req, res) => { }
