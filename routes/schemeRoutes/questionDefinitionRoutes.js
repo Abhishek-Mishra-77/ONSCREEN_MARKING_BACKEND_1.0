@@ -2,19 +2,19 @@ import express from 'express';
 const router = express.Router();
 
 import {
-    createQuestionDifinition,
+    createQuestionDefinition,
     updateQuestionDefinition,
-    removeQuestionDifinition,
-    removeQuestionDifinitionBasedOnSchemeId,
+    removeQuestionDefinition,
+    removeQuestionDefinitionBasedOnSchemeId,
     getQuestionDefinitionById,
-    getAllQuestionDefinationBasedOnSchemeId
+    getAllQuestionDefinitionBasedOnSchemeId
 } from "../../controllers/schemeControllers/questionDefinitionControllers.js"
 
-router.post("/create/questiondefinition", createQuestionDifinition);
-router.put('/update/questiondefinition/:id', updateQuestionDefinition) // QuestionDefinition - id
-router.delete("/remove/questiondefinition/:id", removeQuestionDifinition) // QuestionDefinition - id
-router.delete("/remove/questiondefinition/:schemeId", removeQuestionDifinitionBasedOnSchemeId) // schemeId
-router.get('get/questiondefinition/:id', getQuestionDefinitionById) // QuestionDefinition - id
-router.get("getall/questiondefinitions/:schemeId", getAllQuestionDefinationBasedOnSchemeId) // QuestionDefinition - schemeId
+router.post("/create/questiondefinition", createQuestionDefinition);
+router.put('/update/questiondefinition/:id', updateQuestionDefinition);
+router.delete("/remove/questiondefinition/:id", removeQuestionDefinition);
+router.delete("/remove/questiondefinition/:schemaId", removeQuestionDefinitionBasedOnSchemeId);
+router.get('/get/questiondefinition/:id', getQuestionDefinitionById);
+router.get("/getall/questiondefinitions/:schemaId", getAllQuestionDefinitionBasedOnSchemeId);
 
 export default router;

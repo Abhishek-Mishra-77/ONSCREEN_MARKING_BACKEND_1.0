@@ -1,4 +1,5 @@
 import SubQuestion from "../../models/schemeModel/subQuestions.js";
+import QuestionDefinition from "../../models/schemeModel/questionDefinitionSchema.js";
 
 const createSubQuestion = async (req, res) => { }
 
