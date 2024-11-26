@@ -12,7 +12,7 @@ const createSchema = async (req, res) => {
         }
 
         // Validate totalQuestions, maxMarks, minMarks
-        if (totalQuestions <= 0) {
+        if (Number(totalQuestions) <= 0) {
             return res.status(400).json({ message: "Total questions must be greater than 0" });
         }
         if (Number(maxMarks) <= 0) {
@@ -52,7 +52,7 @@ const updateSchema = async (req, res) => {
         }
 
         // Validate totalQuestions, maxMarks, minMarks
-        if (totalQuestions <= 0) {
+        if (Number(totalQuestions) <= 0) {
             return res.status(400).json({ message: "Total questions must be greater than 0" });
         }
         if (Number(maxMarks) <= 0) {
