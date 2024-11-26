@@ -4,6 +4,7 @@ import Schema from "../../models/schemeModel/schema.js";
 const createSchema = async (req, res) => {
     const { name, totalQuestions, maxMarks, minMarks, compulsoryQuestions, evaluationTime, isActive } = req.body;
 
+
     try {
         // Check if all required fields are present
         if (!name || !totalQuestions || !maxMarks || !minMarks || !evaluationTime) {
@@ -14,10 +15,10 @@ const createSchema = async (req, res) => {
         if (totalQuestions <= 0) {
             return res.status(400).json({ message: "Total questions must be greater than 0" });
         }
-        if (maxMarks <= 0) {
+        if (Number(maxMarks) <= 0) {
             return res.status(400).json({ message: "Max marks must be greater than 0" });
         }
-        if (minMarks < 0 || minMarks > maxMarks) {
+        if (Number(minMarks) < 0 || Number(minMarks) > Number(maxMarks)) {
             return res.status(400).json({ message: "Minimum marks should be between 0 and max marks" });
         }
 
@@ -45,18 +46,19 @@ const updateSchema = async (req, res) => {
     const { name, totalQuestions, maxMarks, minMarks, compulsoryQuestions, evaluationTime, isActive } = req.body;
 
     try {
-        // Validate the input fields
+        // Check if all required fields are present
         if (!name || !totalQuestions || !maxMarks || !minMarks || !evaluationTime) {
             return res.status(400).json({ message: "All fields are required" });
         }
 
+        // Validate totalQuestions, maxMarks, minMarks
         if (totalQuestions <= 0) {
             return res.status(400).json({ message: "Total questions must be greater than 0" });
         }
-        if (maxMarks <= 0) {
+        if (Number(maxMarks) <= 0) {
             return res.status(400).json({ message: "Max marks must be greater than 0" });
         }
-        if (minMarks < 0 || minMarks > maxMarks) {
+        if (Number(minMarks) < 0 || Number(minMarks) > Number(maxMarks)) {
             return res.status(400).json({ message: "Minimum marks should be between 0 and max marks" });
         }
 
