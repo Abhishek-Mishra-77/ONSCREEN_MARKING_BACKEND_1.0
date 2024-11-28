@@ -202,10 +202,9 @@ const removeQuestionDefinitionBasedOnSchemeId = async (req, res) => {
 };
 
 const getQuestionDefinitionById = async (req, res) => {
-    const { id } = req.params; // ID of the question definition to retrieve
+    const { id } = req.params; 
 
     try {
-        // Fetch the question definition by ID
         const questionDefinition = await QuestionDefinition.findById(id);
 
         if (!questionDefinition) {
