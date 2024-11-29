@@ -12,7 +12,6 @@ import classRoutes from "./routes/classRoutes/classRoute.js";
 import subjectRoutes from "./routes/subjectRoutes/subjectRoute.js";
 import schemaRoutes from "./routes/schemeRoutes/schemaRoutes.js";
 import questionDefinitionRoutes from './routes/schemeRoutes/questionDefinitionRoutes.js';
-import subQuestionRoutes from "./routes/schemeRoutes/subQuestionsRoutes.js";
 
 dotenv.config();
 const app = express();
@@ -28,8 +27,6 @@ app.use("/api/classes", classRoutes);
 app.use("/api/subjects", subjectRoutes);
 app.use("/api/schemas", schemaRoutes);
 app.use("/api/schemas", questionDefinitionRoutes);
-app.use("/api/schemas", subQuestionRoutes);
-
 
 
 const PORT = process.env.PORT || 5000;
