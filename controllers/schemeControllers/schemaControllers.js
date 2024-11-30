@@ -1,6 +1,6 @@
 import Schema from "../../models/schemeModel/schema.js";
+import QuestionDefinition from "../../models/schemeModel/questionDefinitionSchema.js";
 
-// Create Schema
 const createSchema = async (req, res) => {
     const { name, totalQuestions, maxMarks, minMarks, compulsoryQuestions, evaluationTime, isActive } = req.body;
 
@@ -113,16 +113,21 @@ const getAllSchemas = async (req, res) => {
 // Remove Schema
 const removeSchema = async (req, res) => {
     const { id } = req.params;
+
     try {
+        await QuestionDefinition.deleteMany({ schemaId: id });
         const schema = await Schema.findByIdAndDelete(id);
+
         if (!schema) {
             return res.status(404).json({ message: "Schema not found." });
         }
-        return res.status(200).json({ message: "Schema successfully removed." });
+
+        return res.status(200).json({ message: "Schema and associated question definitions successfully removed." });
     } catch (error) {
         console.error(error);
-        return res.status(500).json({ message: "An error occurred while removing the schema." });
+        return res.status(500).json({ message: "An error occurred while removing the schema and associated questions." });
     }
 };
+
 
 export { createSchema, updateSchema, getSchemaById, getAllSchemas, removeSchema };
