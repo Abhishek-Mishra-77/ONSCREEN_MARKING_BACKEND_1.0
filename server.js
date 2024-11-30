@@ -51,7 +51,7 @@ async function createInitialUser() {
                 mobile: "8577887978",
                 role: "admin",
                 permissions: [
-                    "Main Dashboard",
+                    "Dashboard",
                     "Evaluator Dashboard",
                     "Classes",
                     "Courses",
