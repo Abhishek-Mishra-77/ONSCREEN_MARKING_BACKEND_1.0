@@ -6,12 +6,10 @@ const createSchema = async (req, res) => {
 
 
     try {
-        // Check if all required fields are present
         if (!name || !totalQuestions || !maxMarks || !minMarks || !evaluationTime) {
             return res.status(400).json({ message: "All fields are required" });
         }
 
-        // Validate totalQuestions, maxMarks, minMarks
         if (Number(totalQuestions) <= 0) {
             return res.status(400).json({ message: "Total questions must be greater than 0" });
         }
@@ -20,6 +18,14 @@ const createSchema = async (req, res) => {
         }
         if (Number(minMarks) < 0 || Number(minMarks) > Number(maxMarks)) {
             return res.status(400).json({ message: "Minimum marks should be between 0 and max marks" });
+        }
+
+        if (Number(compulsoryQuestions) < 0) {
+            return res.status(400).json({ message: "Compulsory questions marks should be between 0 and max marks" });
+        }
+
+        if (Number(compulsoryQuestions) > Number(maxMarks)) {
+            return res.status(400).json({ message: "Compulsory question marks cannot be greater than max marks." });
         }
 
         const newSchema = new Schema({
@@ -40,7 +46,6 @@ const createSchema = async (req, res) => {
     }
 };
 
-// Update Schema
 const updateSchema = async (req, res) => {
     const { id } = req.params;
     const { name, totalQuestions, maxMarks, minMarks, compulsoryQuestions, evaluationTime, isActive } = req.body;
@@ -61,6 +66,15 @@ const updateSchema = async (req, res) => {
         if (Number(minMarks) < 0 || Number(minMarks) > Number(maxMarks)) {
             return res.status(400).json({ message: "Minimum marks should be between 0 and max marks" });
         }
+
+        if (Number(compulsoryQuestions) < 0) {
+            return res.status(400).json({ message: "Compulsory questions marks should be between 0 and max marks" });
+        }
+
+        if (Number(compulsoryQuestions) > Number(maxMarks)) {
+            return res.status(400).json({ message: "Compulsory question marks cannot be greater than max marks." });
+        }
+
 
         // Find schema by id and update it
         const schema = await Schema.findById(id);
