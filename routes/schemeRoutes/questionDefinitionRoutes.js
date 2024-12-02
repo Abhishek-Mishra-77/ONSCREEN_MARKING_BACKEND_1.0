@@ -9,11 +9,12 @@ import {
     getAllPrimaryQuestionBasedOnSchemeId,
 } from "../../controllers/schemeControllers/questionDefinitionControllers.js"
 
+import authMiddleware from "../../Middlewares/authMiddleware.js";
 
-router.post("/create/questiondefinition", createQuestionDefinition);
-router.put('/update/questiondefinition/:id', updateQuestionDefinition);
-router.delete("/remove/questiondefinition/:id", removeQuestionDefinition);
-router.get('/get/questiondefinition/:id', getQuestionDefinitionById);
-router.get("/getall/questiondefinitions/:schemaId", getAllPrimaryQuestionBasedOnSchemeId);
+router.post("/create/questiondefinition", authMiddleware,createQuestionDefinition);
+router.put('/update/questiondefinition/:id',authMiddleware, updateQuestionDefinition);
+router.delete("/remove/questiondefinition/:id",authMiddleware, removeQuestionDefinition);
+router.get('/get/questiondefinition/:id',authMiddleware, getQuestionDefinitionById);
+router.get("/getall/questiondefinitions/:schemaId",authMiddleware, getAllPrimaryQuestionBasedOnSchemeId);
 
 export default router;

@@ -8,7 +8,7 @@ import authMiddleware from "../../Middlewares/authMiddleware.js";
 router.post("/create/schema", authMiddleware, createSchema);
 router.put("/update/schema/:id", authMiddleware, updateSchema);
 router.get("/get/schema/:id", authMiddleware, getSchemaById);
-router.get("/getall/schema", getAllSchemas);
+router.get("/getall/schema", authMiddleware, getAllSchemas);
 router.delete("/remove/schema/:id", authMiddleware, removeSchema);
 
 
