@@ -3,6 +3,7 @@ import User from '../../models/authModels/User.js';
 import bcrypt from 'bcryptjs';
 import sendOtpEmail from '../../services/otpService.js';
 import jwt from "jsonwebtoken";
+import { isValidObjectId } from '../../services/mongoIdValidation.js';
 
 
 const createUser = async (req, res) => {
@@ -109,6 +110,11 @@ const verifyOtp = async (req, res) => {
     }
 
     try {
+
+        if (!isValidObjectId(userId)) {
+            return res.status(400).json({ message: "Invalid user ID." });
+        }
+
         const otpRecord = await Otp.findOne({ user: userId, otp });
 
         if (!otpRecord) {
@@ -152,6 +158,11 @@ const forgotPassword = async (req, res) => {
     const { userId, newPassword } = req.body;
 
     try {
+
+        if (!isValidObjectId(userId)) {
+            return res.status(400).json({ message: "Invalid user ID." });
+        }
+
         const user = await User.findById(userId);
         if (!user) {
             return res.status(404).json({ message: "User not found" });
@@ -172,6 +183,11 @@ const removeUser = async (req, res) => {
     const { id } = req.params;
 
     try {
+
+        if (!isValidObjectId(id)) {
+            return res.status(400).json({ message: "Invalid user ID." });
+        }
+
         const user = await User.findById(id);
         if (!user) {
             return res.status(404).json({ message: "User not found" });
@@ -188,6 +204,11 @@ const removeUser = async (req, res) => {
 const getUserById = async (req, res) => {
     const { id } = req.params;
     try {
+        
+        if (!isValidObjectId(id)) {
+            return res.status(400).json({ message: "Invalid user ID." });
+        }
+
         const user = await User.findById(id);
         res.status(200).json(user);
     } catch (error) {
@@ -215,6 +236,11 @@ const updateUserDetails = async (req, res) => {
     const { id } = req.params;
     const { name, email, mobile, role, permissions } = req.body;
     try {
+
+        if (!isValidObjectId(id)) {
+            return res.status(400).json({ message: "Invalid user ID." });
+        }
+
         const user = await User.findByIdAndUpdate(id, { name, email, mobile, role, permissions });
         if (!user) {
             return res.status(404).json({ message: "User not found" });

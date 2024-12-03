@@ -33,7 +33,6 @@ const removeSubject = async (req, res) => {
     const { id } = req.params;
     try {
 
-
         if (!isValidObjectId(id)) {
             return res.status(400).json({ message: "Invalid subject ID." });
         }
