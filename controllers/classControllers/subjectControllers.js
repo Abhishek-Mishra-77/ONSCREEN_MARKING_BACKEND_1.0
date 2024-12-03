@@ -1,4 +1,5 @@
 import Subject from "../../models/classModel/subjectModel.js";
+import { isValidObjectId } from "../../services/mongoIdValidation.js";
 
 
 const createSubject = async (req, res) => {
@@ -8,6 +9,11 @@ const createSubject = async (req, res) => {
     }
 
     try {
+
+        if (!isValidObjectId(classId)) {
+            return res.status(400).json({ message: "Invalid class ID." });
+        }
+
         const newSubject = new Subject({
             name,
             code,
@@ -26,6 +32,12 @@ const createSubject = async (req, res) => {
 const removeSubject = async (req, res) => {
     const { id } = req.params;
     try {
+
+
+        if (!isValidObjectId(id)) {
+            return res.status(400).json({ message: "Invalid subject ID." });
+        }
+
         const subject = await Subject.findByIdAndDelete(id);
         if (!subject) {
             return res.status(404).json({ message: "Subject not found." });
@@ -40,6 +52,12 @@ const removeSubject = async (req, res) => {
 const getSubjectById = async (req, res) => {
     const { id } = req.params;
     try {
+
+
+        if (!isValidObjectId(id)) {
+            return res.status(400).json({ message: "Invalid subject ID." });
+        }
+
         const subject = await Subject.findById(id);
         if (!subject) {
             return res.status(404).json({ message: "Subject not found." });
@@ -65,6 +83,12 @@ const updateSubject = async (req, res) => {
     const { id } = req.params;
     const { name, code } = req.body;
     try {
+
+
+        if (!isValidObjectId(id)) {
+            return res.status(400).json({ message: "Invalid subject ID." });
+        }
+
         const subject = await Subject.findByIdAndUpdate(id, { name, code }, { new: true });
         if (!subject) {
             return res.status(404).json({ message: "Subject not found." });
@@ -79,6 +103,12 @@ const updateSubject = async (req, res) => {
 const getAllSubjectBasedOnClassId = async (req, res) => {
     const { classId } = req.params;
     try {
+
+
+        if (!isValidObjectId(classId)) {
+            return res.status(400).json({ message: "Invalid class ID." });
+        }
+
         const subjects = await Subject.find({ classId });
         return res.status(200).json(subjects);
     } catch (error) {

@@ -1,4 +1,7 @@
 import Course from "../../models/classModel/classModel.js";
+import Subjects from "../../models/classModel/subjectModel.js"
+import { isValidObjectId } from "../../services/mongoIdValidation.js";
+
 
 // Validate course data
 const validateCourseData = (courseData) => {
@@ -97,6 +100,10 @@ const updateCourse = async (req, res) => {
 
     try {
 
+        if (!isValidObjectId(courseId)) {
+            return res.status(400).json({ message: "Invalid class ID." });
+        }
+
         const course = await Course.findById(courseId);
         if (!course) {
             return res.status(404).json({ error: 'Course not found.' });
@@ -127,6 +134,13 @@ const getCourseById = async (req, res) => {
     const { id } = req.params;
 
     try {
+
+
+        if (!isValidObjectId(id)) {
+            return res.status(400).json({ message: "Invalid class ID." });
+        }
+
+
         const course = await Course.findById(id);
         if (!course) {
             return res.status(404).json({ error: 'Course not found.' });
@@ -143,11 +157,21 @@ const removeCourse = async (req, res) => {
     const { id } = req.params;
 
     try {
+        if (!isValidObjectId(id)) {
+            return res.status(400).json({ message: "Invalid class ID." });
+        }
+        const subjectsDeleted = await Subjects.deleteMany({ classId: id });
+
+        if (subjectsDeleted.deletedCount === 0) {
+            console.log("No subjects found for the course.");
+        }
+
         const course = await Course.findByIdAndDelete(id);
+
         if (!course) {
             return res.status(404).json({ error: 'Course not found.' });
         }
-        return res.status(200).json({ message: 'Course successfully removed.' });
+        return res.status(200).json({ message: 'Course and related subjects successfully removed.' });
     } catch (error) {
         console.error(error);
         return res.status(500).json({ error: 'An error occurred while removing the course.' });

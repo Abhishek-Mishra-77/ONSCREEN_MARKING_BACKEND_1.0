@@ -1,9 +1,8 @@
-import mongoose from "mongoose";
 import QuestionDefinition from "../../models/schemeModel/questionDefinitionSchema.js";
 import { validateQuestionDefinition } from "../../errorHanding/validateQuestionDefinition.js";
 import Schema from "../../models/schemeModel/schema.js";
+import { isValidObjectId } from "../../services/mongoIdValidation.js";
 
-const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
 const createQuestionDefinition = async (req, res) => {
     const {
