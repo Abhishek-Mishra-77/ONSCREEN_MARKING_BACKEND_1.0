@@ -19,7 +19,6 @@ const courseSchema = new mongoose.Schema({
     session: {
         type: Number,
         required: true,
-        trim: true,
     },
     year: {
         type: String,

@@ -12,17 +12,53 @@ const validateCourseData = (courseData) => {
 
 // Save or update course data
 const saveOrUpdateCourse = async (courseData, course) => {
-    Object.assign(course, {
-        className: courseData.className,
-        classCode: courseData.classCode,
-        duration: courseData.duration,
-        session: courseData.session,
-        year: courseData.year,
-        startDate: courseData.startDate || null,
-        endDate: courseData.endDate || null,
-        isActive: courseData.isActive !== undefined ? courseData.isActive : true,
-    });
-    return await course.save();
+    try {
+        let isUpdated = false;
+
+        // Only update the fields that are actually changed
+        if (course.className !== courseData.className) {
+            course.className = courseData.className;
+            isUpdated = true;
+        }
+        if (course.classCode !== courseData.classCode) {
+            course.classCode = courseData.classCode;
+            isUpdated = true;
+        }
+        if (course.duration !== courseData.duration) {
+            course.duration = courseData.duration;
+            isUpdated = true;
+        }
+        if (course.session !== courseData.session) {
+            course.session = courseData.session;
+            isUpdated = true;
+        }
+        if (course.year !== courseData.year) {
+            course.year = courseData.year;
+            isUpdated = true;
+        }
+        if (course.startDate !== courseData.startDate) {
+            course.startDate = courseData.startDate;
+            isUpdated = true;
+        }
+        if (course.endDate !== courseData.endDate) {
+            course.endDate = courseData.endDate;
+            isUpdated = true;
+        }
+        if (course.isActive !== courseData.isActive) {
+            course.isActive = courseData.isActive;
+            isUpdated = true;
+        }
+
+        // Update the updatedAt field only if the course has been modified
+        if (isUpdated) {
+            course.updatedAt = Date.now();
+        }
+
+        return await course.save();
+    } catch (err) {
+        console.error(err);
+        throw new Error('An error occurred while saving or updating the course.');
+    }
 };
 
 // Create a new course
@@ -30,6 +66,12 @@ const createCourse = async (req, res) => {
     const validationError = validateCourseData(req.body);
     if (validationError) {
         return res.status(400).json({ error: validationError });
+    }
+
+    // Check if classCode already exists
+    const existingCourse = await Course.findOne({ classCode: req.body.classCode });
+    if (existingCourse) {
+        return res.status(400).json({ error: 'Class code already exists.' });
     }
 
     const newCourse = new Course(req.body);
@@ -44,20 +86,24 @@ const createCourse = async (req, res) => {
 
 // Update an existing course
 const updateCourse = async (req, res) => {
-    const { id } = req.params;
+    const courseId = req.params.id;
+    const courseData = req.body;
+
+    // Validate course data
+    const validationError = validateCourseData(courseData);
+    if (validationError) {
+        return res.status(400).json({ error: validationError });
+    }
 
     try {
-        const course = await Course.findById(id);
+
+        const course = await Course.findById(courseId);
         if (!course) {
-            return res.status(404).json({ error: "Course not found" });
+            return res.status(404).json({ error: 'Course not found.' });
         }
 
-        const validationError = validateCourseData(req.body);
-        if (validationError) {
-            return res.status(400).json({ error: validationError });
-        }
-
-        const updatedCourse = await saveOrUpdateCourse(req.body, course);
+        // Update or save the course
+        const updatedCourse = await saveOrUpdateCourse(courseData, course);
         return res.status(200).json(updatedCourse);
     } catch (err) {
         console.error(err);
