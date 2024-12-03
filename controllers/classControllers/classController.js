@@ -71,14 +71,20 @@ const createCourse = async (req, res) => {
         return res.status(400).json({ error: validationError });
     }
 
-    // Check if classCode already exists
-    const existingCourse = await Course.findOne({ classCode: req.body.classCode });
-    if (existingCourse) {
-        return res.status(400).json({ error: 'Class code already exists.' });
-    }
 
-    const newCourse = new Course(req.body);
+    console.log(req.body)
+
     try {
+
+
+        // Check if classCode already exists
+        const existingCourse = await Course.findOne({ classCode: req.body.classCode });
+        if (existingCourse) {
+            return res.status(400).json({ error: 'Class code already exists.' });
+        }
+
+        const newCourse = new Course(req.body);
+
         const savedCourse = await newCourse.save();
         return res.status(201).json(savedCourse);
     } catch (err) {
@@ -155,7 +161,6 @@ const getCourseById = async (req, res) => {
 // Remove a course
 const removeCourse = async (req, res) => {
     const { id } = req.params;
-
     try {
         if (!isValidObjectId(id)) {
             return res.status(400).json({ message: "Invalid class ID." });
