@@ -13,6 +13,11 @@ import subjectRoutes from "./routes/subjectRoutes/subjectRoute.js";
 import schemaRoutes from "./routes/schemeRoutes/schemaRoutes.js";
 import questionDefinitionRoutes from './routes/schemeRoutes/questionDefinitionRoutes.js';
 
+
+/* -------------------------------------------------------------------------- */
+/*                           SERVER CONFIGURATION                             */
+/* -------------------------------------------------------------------------- */
+
 dotenv.config();
 const app = express();
 app.use(express.json());
@@ -21,6 +26,10 @@ app.use(cors())
 const __dirname = path.resolve();
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+
+/* -------------------------------------------------------------------------- */
+/*                           ROUTES ORIGIN                                    */
+/* -------------------------------------------------------------------------- */
 
 app.use("/api/auth", authRoutes);
 app.use("/api/classes", classRoutes);
@@ -31,13 +40,22 @@ app.use("/api/schemas", questionDefinitionRoutes);
 
 const PORT = process.env.PORT || 5000;
 
+/* -------------------------------------------------------------------------- */
+/*                           SERVER AND DATABASE SETUP                        */
+/* -------------------------------------------------------------------------- */
+
+
 app.listen(PORT, async () => {
     await database();
     await createInitialUser();
     console.log(`Server running on port ${PORT}`);
 });
 
-// Function to create a user
+
+
+/* -------------------------------------------------------------------------- */
+/*                           FUNCTION TO CREATE INITIAL USER                  */
+/* -------------------------------------------------------------------------- */
 async function createInitialUser() {
     try {
         const existingUser = await User.findOne({ email: "abhishekomr077@gmail.com" });

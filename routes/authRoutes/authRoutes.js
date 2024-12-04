@@ -15,6 +15,10 @@ import {
 } from "../../controllers/authControllers/authControllers.js";
 
 
+/* -------------------------------------------------------------------------- */
+/*                           AUTHENTICATION ROUTES                            */
+/* -------------------------------------------------------------------------- */
+
 router.post('/signup', authMiddleware, createUser);
 router.post('/signin', userLogin);
 router.post('/verify', verifyOtp);

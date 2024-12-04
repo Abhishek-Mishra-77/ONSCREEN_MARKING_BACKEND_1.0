@@ -5,6 +5,11 @@ import { createSchema, updateSchema, getSchemaById, getAllSchemas, removeSchema 
 
 import authMiddleware from "../../Middlewares/authMiddleware.js";
 
+
+/* -------------------------------------------------------------------------- */
+/*                           SCHEMA ROUTES                                    */
+/* -------------------------------------------------------------------------- */
+
 router.post("/create/schema", authMiddleware, createSchema);
 router.put("/update/schema/:id", authMiddleware, updateSchema);
 router.get("/get/schema/:id", authMiddleware, getSchemaById);

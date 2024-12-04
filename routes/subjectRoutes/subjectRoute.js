@@ -12,6 +12,10 @@ import {
 import authMiddleware from "../../Middlewares/authMiddleware.js";
 
 
+/* -------------------------------------------------------------------------- */
+/*                           SUBJECT ROUTES                                   */
+/* -------------------------------------------------------------------------- */
+
 router.post("/create/subject", authMiddleware, createSubject);
 router.delete("/remove/subject/:id", authMiddleware, removeSubject);
 router.get("/getbyid/subject/:id", authMiddleware, getSubjectById);

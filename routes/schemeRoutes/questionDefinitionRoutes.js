@@ -11,6 +11,11 @@ import {
 
 import authMiddleware from "../../Middlewares/authMiddleware.js";
 
+
+/* -------------------------------------------------------------------------- */
+/*                           QUESTION DEFINITION ROUTES                       */
+/* -------------------------------------------------------------------------- */
+
 router.post("/create/questiondefinition", authMiddleware,createQuestionDefinition);
 router.put('/update/questiondefinition/:id',authMiddleware, updateQuestionDefinition);
 router.delete("/remove/questiondefinition/:id",authMiddleware, removeQuestionDefinition);
