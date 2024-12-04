@@ -1,5 +1,10 @@
 import mongoose from "mongoose";
 
+
+/* -------------------------------------------------------------------------- */
+/*                           SCHEMA STRUCTURE SCHEMA                          */
+/* -------------------------------------------------------------------------- */
+
 const schemaSchema = new mongoose.Schema({
     name: {
         type: String,

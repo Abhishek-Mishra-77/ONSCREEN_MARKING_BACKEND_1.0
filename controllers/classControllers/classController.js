@@ -3,7 +3,9 @@ import Subjects from "../../models/classModel/subjectModel.js"
 import { isValidObjectId } from "../../services/mongoIdValidation.js";
 
 
-// Validate course data
+/* -------------------------------------------------------------------------- */
+/*                           VALIDATE COURSE DATA                             */
+/* -------------------------------------------------------------------------- */
 const validateCourseData = (courseData) => {
     const { className, classCode, duration, session, year } = courseData;
 
@@ -13,7 +15,9 @@ const validateCourseData = (courseData) => {
     return null;
 };
 
-// Save or update course data
+/* -------------------------------------------------------------------------- */
+/*                           SAVE OR UPDATE COURSE DATA                       */
+/* -------------------------------------------------------------------------- */
 const saveOrUpdateCourse = async (courseData, course) => {
     try {
         let isUpdated = false;
@@ -64,7 +68,9 @@ const saveOrUpdateCourse = async (courseData, course) => {
     }
 };
 
-// Create a new course
+/* -------------------------------------------------------------------------- */
+/*                           CREATE NEW COURSE                                 */
+/* -------------------------------------------------------------------------- */
 const createCourse = async (req, res) => {
     const validationError = validateCourseData(req.body);
     if (validationError) {
@@ -93,7 +99,9 @@ const createCourse = async (req, res) => {
     }
 };
 
-// Update an existing course
+/* -------------------------------------------------------------------------- */
+/*                           UPDATE COURSE DETAILS                            */
+/* -------------------------------------------------------------------------- */
 const updateCourse = async (req, res) => {
     const courseId = req.params.id;
     const courseData = req.body;
@@ -124,7 +132,9 @@ const updateCourse = async (req, res) => {
     }
 };
 
-// Get all courses
+/* -------------------------------------------------------------------------- */
+/*                           GET ALL COURSES                                  */
+/* -------------------------------------------------------------------------- */
 const getAllCourses = async (req, res) => {
     try {
         const courses = await Course.find();
@@ -135,7 +145,10 @@ const getAllCourses = async (req, res) => {
     }
 };
 
-// Get course by ID
+/* -------------------------------------------------------------------------- */
+/*                           GET COURSE BY ID                                 */
+/* -------------------------------------------------------------------------- */
+
 const getCourseById = async (req, res) => {
     const { id } = req.params;
 
@@ -158,7 +171,9 @@ const getCourseById = async (req, res) => {
     }
 };
 
-// Remove a course
+/* -------------------------------------------------------------------------- */
+/*                           REMOVE COURSE BY ID                              */
+/* -------------------------------------------------------------------------- */
 const removeCourse = async (req, res) => {
     const { id } = req.params;
     try {

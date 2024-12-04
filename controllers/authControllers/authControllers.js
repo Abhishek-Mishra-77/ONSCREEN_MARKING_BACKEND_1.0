@@ -6,6 +6,10 @@ import jwt from "jsonwebtoken";
 import { isValidObjectId } from '../../services/mongoIdValidation.js';
 
 
+/* -------------------------------------------------------------------------- */
+/*                           USER CREATION                                    */
+/* -------------------------------------------------------------------------- */
+
 const createUser = async (req, res) => {
     const { name, email, password, mobile, role, permissions } = req.body;
 
@@ -47,6 +51,10 @@ const createUser = async (req, res) => {
         res.status(500).json({ message: "Failed to send OTP", error: error.message });
     }
 };
+
+/* -------------------------------------------------------------------------- */
+/*                           USER LOGIN                                       */
+/* -------------------------------------------------------------------------- */
 
 const userLogin = async (req, res) => {
     const { email, password, type } = req.body;
@@ -102,6 +110,11 @@ const userLogin = async (req, res) => {
     }
 };
 
+
+/* -------------------------------------------------------------------------- */
+/*                           OTP VERIFICATION                                 */
+/* -------------------------------------------------------------------------- */
+
 const verifyOtp = async (req, res) => {
     const { userId, otp } = req.body;
 
@@ -118,26 +131,31 @@ const verifyOtp = async (req, res) => {
         const otpRecord = await Otp.findOne({ user: userId, otp });
 
         if (!otpRecord) {
+        // Validate user ID
             return res.status(400).json({ message: "Invalid OTP" });
         }
 
         if (otpRecord.expiresAt < Date.now()) {
             await Otp.deleteOne({ user: userId, otp });
+        // Find OTP record for the user
             await User.deleteOne({ _id: userId });
             return res.status(400).json({ message: "OTP has expired. User account deleted." });
         }
 
         if (otpRecord.attempts >= 3) {
             await Otp.deleteOne({ user: userId, otp });
+        // Check if OTP has expired
             await User.deleteOne({ _id: userId });
             return res.status(400).json({ message: "Maximum attempts exceeded. User account deleted." });
         }
 
         if (otpRecord.otp === otp) {
             await Otp.deleteOne({ user: userId, otp });
+        // Check if maximum attempts have been exceeded
             const user = await User.findById(userId);
             const token = jwt.sign(
                 { userId: user._id, email: user.email, role: user.role },
+        // Validate OTP
                 process.env.JWT_SECRET,
                 { expiresIn: "24h" }
             );
@@ -147,12 +165,17 @@ const verifyOtp = async (req, res) => {
             otpRecord.attempts += 1;
             await otpRecord.save();
             res.status(400).json({ message: "Invalid OTP" });
+            // Increment attempts if OTP is invalid
         }
     } catch (error) {
         console.error("Error during OTP verification:", error);
         res.status(500).json({ message: "Failed to verify OTP", error: error.message });
     }
 };
+
+/* -------------------------------------------------------------------------- */
+/*                           FORGOT PASSWORD                                  */
+/* -------------------------------------------------------------------------- */
 
 const forgotPassword = async (req, res) => {
     const { userId, newPassword } = req.body;
@@ -179,6 +202,11 @@ const forgotPassword = async (req, res) => {
     }
 }
 
+
+/* -------------------------------------------------------------------------- */
+/*                           REMOVE USER BY ID                                */
+/* -------------------------------------------------------------------------- */
+
 const removeUser = async (req, res) => {
     const { id } = req.params;
 
@@ -201,10 +229,14 @@ const removeUser = async (req, res) => {
     }
 }
 
+/* -------------------------------------------------------------------------- */
+/*                           GET USER DETAILS BY ID                           */
+/* -------------------------------------------------------------------------- */
+
 const getUserById = async (req, res) => {
     const { id } = req.params;
     try {
-        
+
         if (!isValidObjectId(id)) {
             return res.status(400).json({ message: "Invalid user ID." });
         }
@@ -217,6 +249,10 @@ const getUserById = async (req, res) => {
     }
 }
 
+
+/* -------------------------------------------------------------------------- */
+/*                           GET ALL USERS                                    */
+/* -------------------------------------------------------------------------- */
 
 const getAllUsers = async (req, res) => {
     try {
@@ -231,6 +267,11 @@ const getAllUsers = async (req, res) => {
     }
 }
 
+
+
+/* -------------------------------------------------------------------------- */
+/*                           UPDATE USER DETAILS                              */
+/* -------------------------------------------------------------------------- */
 
 const updateUserDetails = async (req, res) => {
     const { id } = req.params;
@@ -254,6 +295,9 @@ const updateUserDetails = async (req, res) => {
 }
 
 
+/* -------------------------------------------------------------------------- */
+/*                           CREATE USERS BY CSV UPLOAD                       */
+/* -------------------------------------------------------------------------- */
 const createUsersByCsvFile = async (req, res) => {
     try {
         const users = req.body;

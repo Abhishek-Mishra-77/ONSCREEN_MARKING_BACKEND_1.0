@@ -1,5 +1,9 @@
 import mongoose from 'mongoose';
 
+/* -------------------------------------------------------------------------- */
+/*                           OTP SCHEMA                                       */
+/* -------------------------------------------------------------------------- */
+
 const otpSchema = new mongoose.Schema({
     user: {
         type: mongoose.Schema.Types.ObjectId,

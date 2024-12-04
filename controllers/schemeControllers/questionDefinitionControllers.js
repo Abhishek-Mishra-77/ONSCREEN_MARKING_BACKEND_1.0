@@ -4,6 +4,9 @@ import Schema from "../../models/schemeModel/schema.js";
 import { isValidObjectId } from "../../services/mongoIdValidation.js";
 
 
+/* -------------------------------------------------------------------------- */
+/*                           CREATE QUESTION DEFINITION                       */
+/* -------------------------------------------------------------------------- */
 const createQuestionDefinition = async (req, res) => {
     const {
         schemaId,
@@ -78,6 +81,10 @@ const createQuestionDefinition = async (req, res) => {
     }
 };
 
+
+/* -------------------------------------------------------------------------- */
+/*                       UPDATE QUESTION DEFINITION BY ID                     */
+/* -------------------------------------------------------------------------- */
 const updateQuestionDefinition = async (req, res) => {
     const {
         schemaId,
@@ -176,6 +183,9 @@ const updateQuestionDefinition = async (req, res) => {
 };
 
 
+/* -------------------------------------------------------------------------- */
+/*                           REMOVE QUESTION DEFINITION                       */
+/* -------------------------------------------------------------------------- */
 const removeQuestionDefinition = async (req, res) => {
     const { id } = req.params;
 
@@ -212,6 +222,11 @@ const removeQuestionDefinition = async (req, res) => {
     }
 };
 
+
+/* -------------------------------------------------------------------------- */
+/*                           GET QUESTION DEFINITION BY ID                    */
+/* -------------------------------------------------------------------------- */
+
 const getQuestionDefinitionById = async (req, res) => {
     const { id } = req.params;
     try {
@@ -246,7 +261,9 @@ const getQuestionDefinitionById = async (req, res) => {
     }
 };
 
-
+/* -------------------------------------------------------------------------- */
+/*                  GET ALL PRIMARY QUESTION BY SCHEMA ID                     */
+/* -------------------------------------------------------------------------- */
 const getAllPrimaryQuestionBasedOnSchemeId = async (req, res) => {
     const { schemaId } = req.params;
 
@@ -284,4 +301,5 @@ export {
     getQuestionDefinitionById,
     getAllPrimaryQuestionBasedOnSchemeId,
 }
+
 

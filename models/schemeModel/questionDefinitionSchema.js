@@ -1,5 +1,9 @@
 import mongoose from "mongoose";
 
+/* -------------------------------------------------------------------------- */
+/*                           QUESTION DEFINITION SCHEMA                       */
+/* -------------------------------------------------------------------------- */
+
 const questionDefinitionSchema = new mongoose.Schema({
     schemaId: {
         type: mongoose.Schema.Types.ObjectId,

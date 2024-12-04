@@ -1,9 +1,12 @@
 import Schema from "../../models/schemeModel/schema.js";
 import QuestionDefinition from "../../models/schemeModel/questionDefinitionSchema.js";
 
+
+/* -------------------------------------------------------------------------- */
+/*                           CREATE SCHEMA                                    */
+/* -------------------------------------------------------------------------- */
 const createSchema = async (req, res) => {
     const { name, totalQuestions, maxMarks, minMarks, compulsoryQuestions, evaluationTime, isActive } = req.body;
-
 
     try {
         if (!name || !totalQuestions || !maxMarks || !minMarks || !evaluationTime) {
@@ -45,6 +48,10 @@ const createSchema = async (req, res) => {
         return res.status(500).json({ message: "An error occurred while creating the schema." });
     }
 };
+
+/* -------------------------------------------------------------------------- */
+/*                           UPDATE SCHEMA                                    */
+/* -------------------------------------------------------------------------- */
 
 const updateSchema = async (req, res) => {
     const { id } = req.params;
@@ -98,7 +105,9 @@ const updateSchema = async (req, res) => {
     }
 };
 
-// Get Schema By ID
+/* -------------------------------------------------------------------------- */
+/*                           GET SCHEMA BY ID                                 */
+/* -------------------------------------------------------------------------- */
 const getSchemaById = async (req, res) => {
     const { id } = req.params;
     try {
@@ -113,7 +122,9 @@ const getSchemaById = async (req, res) => {
     }
 };
 
-// Get All Schemas
+/* -------------------------------------------------------------------------- */
+/*                           GET ALL SCHEMA                                   */
+/* -------------------------------------------------------------------------- */
 const getAllSchemas = async (req, res) => {
     try {
         const schemas = await Schema.find();
@@ -124,7 +135,9 @@ const getAllSchemas = async (req, res) => {
     }
 };
 
-// Remove Schema
+/* -------------------------------------------------------------------------- */
+/*                           REMOVE SCHEMA BY ID                              */
+/* -------------------------------------------------------------------------- */
 const removeSchema = async (req, res) => {
     const { id } = req.params;
 

@@ -1,6 +1,10 @@
 import User from "../models/authModels/User.js";
 import jwt from "jsonwebtoken"
 
+
+/* -------------------------------------------------------------------------- */
+/*                           AUTH MIDDLEWARE                                  */
+/* -------------------------------------------------------------------------- */
 const authMiddleware = async (req, res, next) => {
     const token = req?.headers?.authorization?.split(" ")[1];
     try {

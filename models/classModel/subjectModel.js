@@ -1,5 +1,9 @@
 import mongoose from "mongoose";
 
+
+/* -------------------------------------------------------------------------- */
+/*                           SUBJECT SCHEMA                                    */
+/* -------------------------------------------------------------------------- */
 const subjectSchema = new mongoose.Schema({
     name: {
         type: String,

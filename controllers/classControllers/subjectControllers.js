@@ -2,6 +2,9 @@ import Subject from "../../models/classModel/subjectModel.js";
 import { isValidObjectId } from "../../services/mongoIdValidation.js";
 
 
+/* -------------------------------------------------------------------------- */
+/*                           CREATE SUBJECT                                   */
+/* -------------------------------------------------------------------------- */
 const createSubject = async (req, res) => {
     const { name, code, classId } = req.body;
     if (!name || !code || !classId) {
@@ -29,6 +32,9 @@ const createSubject = async (req, res) => {
 };
 
 
+/* -------------------------------------------------------------------------- */
+/*                           REMOVE SUBJECT                                   */
+/* -------------------------------------------------------------------------- */
 const removeSubject = async (req, res) => {
     const { id } = req.params;
     try {
@@ -48,6 +54,9 @@ const removeSubject = async (req, res) => {
     }
 }
 
+/* -------------------------------------------------------------------------- */
+/*                           GET SUBJECT BY ID                                */
+/* -------------------------------------------------------------------------- */
 const getSubjectById = async (req, res) => {
     const { id } = req.params;
     try {
@@ -68,6 +77,9 @@ const getSubjectById = async (req, res) => {
     }
 }
 
+/* -------------------------------------------------------------------------- */
+/*                           GET ALL SUBJECTS                                 */
+/* -------------------------------------------------------------------------- */
 const getAllSubjects = async (req, res) => {
     try {
         const subjects = await Subject.find();
@@ -78,6 +90,9 @@ const getAllSubjects = async (req, res) => {
     }
 }
 
+/* -------------------------------------------------------------------------- */
+/*                           UPDATE SUBJECT BY ID                             */
+/* -------------------------------------------------------------------------- */
 const updateSubject = async (req, res) => {
     const { id } = req.params;
     const { name, code } = req.body;
@@ -99,6 +114,9 @@ const updateSubject = async (req, res) => {
     }
 }
 
+/* -------------------------------------------------------------------------- */
+/*                           GET ALL SUBJECTS BY CLASS  ID                    */
+/* -------------------------------------------------------------------------- */
 const getAllSubjectBasedOnClassId = async (req, res) => {
     const { classId } = req.params;
     try {

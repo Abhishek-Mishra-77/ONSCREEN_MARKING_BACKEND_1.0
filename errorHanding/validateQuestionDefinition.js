@@ -1,3 +1,8 @@
+
+/* -------------------------------------------------------------------------- */
+/*                     VALIDATE QUESTION DEFINITION                           */
+/* -------------------------------------------------------------------------- */
+
 export const validateQuestionDefinition = ({
     schemaId,
     questionsName,

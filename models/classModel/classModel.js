@@ -1,5 +1,10 @@
 import mongoose from "mongoose";
 
+
+/* -------------------------------------------------------------------------- */
+/*                           COURSE SCHEMA                                    */
+/* -------------------------------------------------------------------------- */
+
 const courseSchema = new mongoose.Schema({
     className: {
         type: String,
