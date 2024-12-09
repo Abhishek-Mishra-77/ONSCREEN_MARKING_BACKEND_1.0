@@ -3,7 +3,6 @@ import { validateQuestionDefinition } from "../../errorHanding/validateQuestionD
 import Schema from "../../models/schemeModel/schema.js";
 import { isValidObjectId } from "../../services/mongoIdValidation.js";
 
-
 /* -------------------------------------------------------------------------- */
 /*                           CREATE QUESTION DEFINITION                       */
 /* -------------------------------------------------------------------------- */
@@ -63,8 +62,8 @@ const createQuestionDefinition = async (req, res) => {
             isSubQuestion,
             bonusMarks: bonusMarks || 0,
             marksDifference: marksDifference || 0,
-            numberOfSubQuestions: isSubQuestion ? (numberOfSubQuestions || 0) : 0,
-            compulsorySubQuestions: isSubQuestion ? (compulsorySubQuestions || 0) : 0,
+            numberOfSubQuestions: isSubQuestion ? (numberOfSubQuestions) : 0,
+            compulsorySubQuestions: isSubQuestion ? (compulsorySubQuestions) : 0,
         };
 
         const questionDefinition = new QuestionDefinition(questionDefinitionData);

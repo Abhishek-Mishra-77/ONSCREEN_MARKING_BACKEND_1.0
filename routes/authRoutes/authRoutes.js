@@ -27,7 +27,7 @@ router.get('/:id', authMiddleware, getUserById);
 router.get('/', authMiddleware, getAllUsers);
 router.delete('/removeUser/:id', authMiddleware, removeUser);
 router.put('/update/:id', authMiddleware, updateUserDetails);
-router.post('/createuserbycsv', createUsersByCsvFile);
+router.post('/createuserbycsv', authMiddleware, createUsersByCsvFile);
 
 export default router;
 
