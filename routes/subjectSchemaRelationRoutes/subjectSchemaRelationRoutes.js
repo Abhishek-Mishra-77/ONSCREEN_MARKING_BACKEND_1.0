@@ -9,11 +9,11 @@ import {
     getAllSubjectSchemaRelationBySubjectId,
     getAllSubjectSchemaRelationBySchemaId
 } from "../../controllers/subjectSchemaRelation/subjectSchemaRelation.js"
-import { uploadMiddleware } from '../../controllers/subjectSchemaRelation/subjectSchemaRelation.js';
+import uploadMiddleware from '../../controllers/subjectSchemaRelation/uploadingPdf.js';
 import authMiddleware from "../../Middlewares/authMiddleware.js";
 
 /* -------------------------------------------------------------------------- */
-/*                           SUBJECT SCHEMA RELATION ROUTES                    */
+/*                           SUBJECT SCHEMA RELATION ROUTES                   */
 /* -------------------------------------------------------------------------- */
 
 router.post('/createsubjectschemarel', uploadMiddleware, createSubjectSchemaRelation);

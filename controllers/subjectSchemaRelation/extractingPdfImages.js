@@ -1,32 +1,38 @@
 import fs from 'fs';
 import path from 'path';
-import { PDFDocument } from 'pdf-lib';
+import poppler from 'pdf-poppler';
+
 
 const extractImagesFromPdf = async (pdfPath, outputDir) => {
-    const pdfBytes = fs.readFileSync(pdfPath);
-    const pdfDoc = await PDFDocument.load(pdfBytes);
-    const pages = pdfDoc.getPages();
-
     if (!fs.existsSync(outputDir)) {
         fs.mkdirSync(outputDir, { recursive: true });
     }
 
-    let imageCounter = 1;
+    const options = {
+        format: 'png',
+        out_dir: outputDir,
+        out_prefix: path.basename(pdfPath, path.extname(pdfPath)),
+        page: null
+    };
 
-    for (let i = 0; i < pages.length; i++) {
-        const page = pages[i];
-        const images = page.getImages();
+    try {
+        await poppler.convert(pdfPath, options);
 
-        for (let j = 0; j < images.length; j++) {
-            const image = images[j];
-            const outputImagePath = path.join(outputDir, `image${imageCounter}.png`);
-            fs.writeFileSync(outputImagePath, image.bytes);
-            imageCounter++;
-        }
+        const images = fs.readdirSync(outputDir);
+
+        images.forEach((image, index) => {
+            const oldPath = path.join(outputDir, image);
+            const newPath = path.join(outputDir, `image_${index + 1}.png`);
+            fs.renameSync(oldPath, newPath);
+        });
+
+        return images.length;
+    } catch (error) {
+        console.error("Error extracting images from PDF:", error);
+        throw new Error("Failed to extract images from PDF.");
     }
-
-    return imageCounter - 1; 
 };
+
 
 
 export default extractImagesFromPdf;
