@@ -102,21 +102,117 @@ const getSubjectSchemaRelationById = async (req, res) => {
     }
 }
 
-const deleteSubjectSchemaRelationById = async (req, res) => { }
+const deleteSubjectSchemaRelationById = async (req, res) => {
+    const { id } = req.params;
 
-const updateSubjectSchemaRelation = async (req, res) => { }
+    try {
+        if (!isValidObjectId(id)) {
+            return res.status(400).json({ message: "Invalid subject schema relation ID." });
+        }
 
-const getAllSubjectSchemaRelationBySubjectId = async (req, res) => { 
-     const {subjectId} = req.params;
-     try {
 
-     }
-     catch(error) {
-           
-     }
+        // Find the SubjectSchemaRelation before deletion
+        const subjectSchemaRelation = await SubjectSchemaRelation.findById({ _id: id });
+        if (!subjectSchemaRelation) {
+            return res.status(404).json({ message: "Subject schema relation not found." });
+        }
+
+        // Define base directories
+        const baseDir = path.resolve(process.cwd(), 'uploadedPdfs');
+        const questionPdfPath = path.join(baseDir, 'questionPdfs', `${subjectSchemaRelation.questionPdfPath}.pdf`);
+        const answerPdfPath = path.join(baseDir, 'answerPdfs', `${subjectSchemaRelation.answerPdfPath}.pdf`);
+        const extractedQuestionImageDir = path.join(baseDir, 'extractedQuestionPdfImages', subjectSchemaRelation.questionPdfPath);
+        const extractedAnswerImageDir = path.join(baseDir, 'extractedAnswerPdfImages', subjectSchemaRelation.answerPdfPath);
+
+        // Helper function to remove files or directories
+        const removeFileOrDirectory = (filePath) => {
+            if (fs.existsSync(filePath)) {
+                const stats = fs.statSync(filePath);
+                if (stats.isDirectory()) {
+                    fs.rmSync(filePath, { recursive: true, force: true });
+                } else {
+                    fs.unlinkSync(filePath);
+                }
+            }
+        };
+
+        // Remove PDF files and extracted image directories
+        removeFileOrDirectory(questionPdfPath);
+        removeFileOrDirectory(answerPdfPath);
+        removeFileOrDirectory(extractedQuestionImageDir);
+        removeFileOrDirectory(extractedAnswerImageDir);
+
+        // Delete the SubjectSchemaRelation from the database
+        await SubjectSchemaRelation.findByIdAndDelete(id);
+
+        res.status(200).json({ message: "Subject schema relation and associated files deleted successfully." });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'An error occurred while deleting the subject schema relation.' });
+    }
+};
+
+const updateSubjectSchemaRelation = async (req, res) => {
+
 }
 
-const getAllSubjectSchemaRelationBySchemaId = async (req, res) => { }
+const getAllSubjectSchemaRelationBySubjectId = async (req, res) => {
+    const { subjectId } = req.params;
+    try {
+
+        if (!isValidObjectId(subjectId)) {
+            return res.status(400).json({ message: "Invalid subject ID." });
+        }
+
+        const subjectSchemaRelations = await SubjectSchemaRelation.find({ subjectId: subjectId });
+        if (!subjectSchemaRelations) {
+            return res.status(404).json({ message: "Subject schema relations not found." });
+        }
+
+        res.status(200).json(subjectSchemaRelations);
+
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'An error occurred while retrieving the subject schema relations.' });
+    }
+}
+
+const getAllSubjectSchemaRelationBySchemaId = async (req, res) => {
+    const { schemaId } = req.params;
+
+    try {
+
+        if (!isValidObjectId(schemaId)) {
+            return res.status(400).json({ message: "Invalid schema ID." });
+        }
+
+        const subjectSchemaRelations = await SubjectSchemaRelation.find({ schemaId: schemaId });
+        if (!subjectSchemaRelations) {
+            return res.status(404).json({ message: "Subject schema relations not found." });
+        }
+
+        res.status(200).json(subjectSchemaRelations);
+
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'An error occurred while retrieving the subject schema relations.' });
+    }
+}
+
+
+const getAllSubjectSchemaRelationBySchemaIdAndSubjectId = async (req, res) => {
+    const { schemaId, subjectId } = req.params;
+    
+    try {
+
+    }
+    catch(error) {
+         
+    }
+
+}
 
 export {
     createSubjectSchemaRelation,
