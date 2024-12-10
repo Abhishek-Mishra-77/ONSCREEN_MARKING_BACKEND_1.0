@@ -81,13 +81,40 @@ const createSubjectSchemaRelation = async (req, res) => {
     }
 };
 
-const getSubjectSchemaRelationById = async (req, res) => { }
+const getSubjectSchemaRelationById = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        if (!isValidObjectId(id)) {
+            return res.status(400).json({ message: "Invalid subject schema relation ID." });
+        }
+
+        const subjectSchemaRelation = await SubjectSchemaRelation.findById({ _id: id });
+
+        if (!subjectSchemaRelation) {
+            return res.status(404).json({ message: "Subject schema relation not found." });
+        }
+
+        res.status(200).json(subjectSchemaRelation);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'An error occurred while retrieving the subject schema relation.' });
+    }
+}
 
 const deleteSubjectSchemaRelationById = async (req, res) => { }
 
 const updateSubjectSchemaRelation = async (req, res) => { }
 
-const getAllSubjectSchemaRelationBySubjectId = async (req, res) => { }
+const getAllSubjectSchemaRelationBySubjectId = async (req, res) => { 
+     const {subjectId} = req.params;
+     try {
+
+     }
+     catch(error) {
+           
+     }
+}
 
 const getAllSubjectSchemaRelationBySchemaId = async (req, res) => { }
 
