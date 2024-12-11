@@ -6,10 +6,12 @@ import fs from 'fs';
 import path from 'path';
 import extractImagesFromPdf from "./extractingPdfImages.js";
 
-
 const createSubjectSchemaRelation = async (req, res) => {
     try {
         const { schemaId, subjectId } = req.body;
+
+        console.log(schemaId + " -> SCHEMAID")
+        console.log(subjectId + " -> SUBJECTID")
 
         if (!schemaId || !subjectId || !req.files.questionPdf || !req.files.answerPdf) {
             return res.status(400).json({ message: "All fields are required." });
@@ -20,11 +22,13 @@ const createSubjectSchemaRelation = async (req, res) => {
         }
 
         const isValidSubject = await Subject.findOne({ _id: subjectId });
+
         if (!isValidSubject) {
             return res.status(404).json({ message: "Subject not found." });
         }
 
         const isValidSchema = await Schema.findOne({ _id: schemaId });
+
         if (!isValidSchema) {
             return res.status(404).json({ message: "Schema not found." });
         }
@@ -153,9 +157,97 @@ const deleteSubjectSchemaRelationById = async (req, res) => {
 };
 
 const updateSubjectSchemaRelation = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const { schemaId, subjectId } = req.body;
 
-}
+        if (!schemaId || !subjectId) {
+            return res.status(400).json({ message: 'SchemaId and SubjectId are required.' });
+        }
 
+        if (!isValidObjectId(subjectId) || !isValidObjectId(schemaId)) {
+            return res.status(400).json({ message: 'Invalid schemaId or subjectId.' });
+        }
+
+        if (!isValidObjectId(id)) {
+            return res.status(400).json({ message: 'subject schema relation ID is invalid.' });
+        }
+
+        const subjectSchemaRelation = await SubjectSchemaRelation.findOne({ _id: id });
+
+        if (!subjectSchemaRelation) {
+            return res.status(404).json({ message: 'SubjectSchemaRelation not found.' });
+        }
+
+        const baseDir = path.resolve(process.cwd(), 'uploadedPdfs');
+        const questionPdfDir = path.join(baseDir, 'questionPdfs');
+        const answerPdfDir = path.join(baseDir, 'answerPdfs');
+        const extractedQuestionImageDir = path.join(baseDir, 'extractedQuestionPdfImages');
+        const extractedAnswerImageDir = path.join(baseDir, 'extractedAnswerPdfImages');
+
+        let updatedFields = {};
+
+        // Handle Question PDF Replacement
+        if (req.files.questionPdf) {
+            const oldQuestionPdf = subjectSchemaRelation.questionPdfPath;
+            const questionPdf = req.files.questionPdf[0];
+            const questionPdfPath = path.join(questionPdfDir, questionPdf.filename);
+
+            // Delete old PDF and its extracted images
+            if (oldQuestionPdf) {
+                const oldQuestionPdfPath = path.join(questionPdfDir, `${oldQuestionPdf}.pdf`);
+                const oldQuestionImageDir = path.join(extractedQuestionImageDir, oldQuestionPdf);
+                if (fs.existsSync(oldQuestionPdfPath)) fs.unlinkSync(oldQuestionPdfPath);
+                if (fs.existsSync(oldQuestionImageDir)) fs.rmSync(oldQuestionImageDir, { recursive: true, force: true });
+            }
+
+            // Move and process new Question PDF
+            fs.renameSync(questionPdf.path, questionPdfPath);
+            const questionImageSubDir = path.join(extractedQuestionImageDir, path.basename(questionPdf.filename, '.pdf'));
+            if (!fs.existsSync(questionImageSubDir)) fs.mkdirSync(questionImageSubDir, { recursive: true });
+            const questionImageCount = await extractImagesFromPdf(questionPdfPath, questionImageSubDir);
+
+            updatedFields.questionPdfPath = path.basename(questionPdf.filename, '.pdf');
+            updatedFields.countOfQuestionImages = questionImageCount;
+        }
+
+        // Handle Answer PDF Replacement
+        if (req.files.answerPdf) {
+            const oldAnswerPdf = subjectSchemaRelation.answerPdfPath;
+            const answerPdf = req.files.answerPdf[0];
+            const answerPdfPath = path.join(answerPdfDir, answerPdf.filename);
+
+            // Delete old PDF and its extracted images
+            if (oldAnswerPdf) {
+                const oldAnswerPdfPath = path.join(answerPdfDir, `${oldAnswerPdf}.pdf`);
+                const oldAnswerImageDir = path.join(extractedAnswerImageDir, oldAnswerPdf);
+                if (fs.existsSync(oldAnswerPdfPath)) fs.unlinkSync(oldAnswerPdfPath);
+                if (fs.existsSync(oldAnswerImageDir)) fs.rmSync(oldAnswerImageDir, { recursive: true, force: true });
+            }
+
+            // Move and process new Answer PDF
+            fs.renameSync(answerPdf.path, answerPdfPath);
+            const answerImageSubDir = path.join(extractedAnswerImageDir, path.basename(answerPdf.filename, '.pdf'));
+            if (!fs.existsSync(answerImageSubDir)) fs.mkdirSync(answerImageSubDir, { recursive: true });
+            const answerImageCount = await extractImagesFromPdf(answerPdfPath, answerImageSubDir);
+
+            updatedFields.answerPdfPath = path.basename(answerPdf.filename, '.pdf');
+            updatedFields.countOfAnswerImages = answerImageCount;
+        }
+
+        // Update the database record
+        const updatedSubjectSchemaRelation = await SubjectSchemaRelation.findByIdAndUpdate(
+            subjectSchemaRelation._id,
+            { $set: updatedFields },
+            { new: true }
+        );
+
+        res.status(200).json(updatedSubjectSchemaRelation);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'An error occurred while updating the subject schema relation.' });
+    }
+};
 const getAllSubjectSchemaRelationBySubjectId = async (req, res) => {
     const { subjectId } = req.params;
     try {
@@ -202,14 +294,30 @@ const getAllSubjectSchemaRelationBySchemaId = async (req, res) => {
 }
 
 
+
 const getAllSubjectSchemaRelationBySchemaIdAndSubjectId = async (req, res) => {
     const { schemaId, subjectId } = req.params;
 
     try {
+        if (!schemaId || !subjectId) {
+            return res.status(400).json({ message: "Invalid schema ID." });
+        }
+
+        if (!isValidObjectId(schemaId) || !isValidObjectId(subjectId)) {
+            return res.status(400).json({ message: "Invalid schema ID." });
+        }
+
+        const subjectSchemaRelations = await SubjectSchemaRelation.find({ schemaId: schemaId, subjectId: subjectId });
+        if (!subjectSchemaRelations) {
+            return res.status(404).json({ message: "Subject schema relations not found." });
+        }
+
+        res.status(200).json(subjectSchemaRelations);
 
     }
     catch (error) {
-
+        console.error(error);
+        res.status(500).json({ error: 'An error occurred while retrieving the subject schema relations.' });
     }
 
 }
@@ -220,5 +328,6 @@ export {
     deleteSubjectSchemaRelationById,
     updateSubjectSchemaRelation,
     getAllSubjectSchemaRelationBySubjectId,
-    getAllSubjectSchemaRelationBySchemaId
+    getAllSubjectSchemaRelationBySchemaId,
+    getAllSubjectSchemaRelationBySchemaIdAndSubjectId
 }

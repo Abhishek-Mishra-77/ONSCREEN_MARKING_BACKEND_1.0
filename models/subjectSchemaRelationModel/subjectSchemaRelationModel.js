@@ -31,6 +31,10 @@ const courseSchemaRelation = new mongoose.Schema({
         type: Number,
         required: true
     },
+    createdAt: {
+        type: Date,
+        default: Date.now
+    }
 })
 
 const CourseSchemaRelation = mongoose.model("CourseSchemaRelation", courseSchemaRelation);
