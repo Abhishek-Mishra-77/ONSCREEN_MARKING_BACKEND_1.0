@@ -204,12 +204,12 @@ const getAllSubjectSchemaRelationBySchemaId = async (req, res) => {
 
 const getAllSubjectSchemaRelationBySchemaIdAndSubjectId = async (req, res) => {
     const { schemaId, subjectId } = req.params;
-    
+
     try {
 
     }
-    catch(error) {
-         
+    catch (error) {
+
     }
 
 }
