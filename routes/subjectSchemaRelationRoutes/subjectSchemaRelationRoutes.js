@@ -18,13 +18,13 @@ import authMiddleware from "../../Middlewares/authMiddleware.js";
 /*                           SUBJECT SCHEMA RELATION ROUTES                   */
 /* -------------------------------------------------------------------------- */
 
-router.post('/createsubjectschemarel', uploadMiddleware, createSubjectSchemaRelation);
-router.get('/getsubjectbyid/:id', getSubjectSchemaRelationById);
-router.delete('/deletesubjectbyid/:id', deleteSubjectSchemaRelationById);
-router.put('/updatesubjectbyid/:id', uploadMiddleware, updateSubjectSchemaRelation);
-router.get('/getallsubjectbyid/:subjectId', getAllSubjectSchemaRelationBySubjectId);
-router.get('/getallschemabyid/:schemaId', getAllSubjectSchemaRelationBySchemaId);
-router.get('/getallschemabyidandsubjectid/:schemaId/:subjectId', getAllSubjectSchemaRelationBySchemaIdAndSubjectId);
+router.post('/createsubjectschemarel', authMiddleware, uploadMiddleware, createSubjectSchemaRelation);
+router.get('/getsubjectbyid/:id', authMiddleware, getSubjectSchemaRelationById);
+router.delete('/deletesubjectbyid/:id', authMiddleware, deleteSubjectSchemaRelationById);
+router.put('/updatesubjectbyid/:id', authMiddleware, uploadMiddleware, updateSubjectSchemaRelation);
+router.get('/getallsubjectbyid/:subjectId', authMiddleware, getAllSubjectSchemaRelationBySubjectId);
+router.get('/getallschemabyid/:schemaId', authMiddleware, getAllSubjectSchemaRelationBySchemaId);
+router.get('/getallschemabyidandsubjectid/:schemaId/:subjectId', authMiddleware, getAllSubjectSchemaRelationBySchemaIdAndSubjectId);
 
 
 export default router;
