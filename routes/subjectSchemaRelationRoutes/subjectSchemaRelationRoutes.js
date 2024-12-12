@@ -18,7 +18,7 @@ import authMiddleware from "../../Middlewares/authMiddleware.js";
 /*                           SUBJECT SCHEMA RELATION ROUTES                   */
 /* -------------------------------------------------------------------------- */
 
-router.post('/createsubjectschemarel', authMiddleware, uploadMiddleware, createSubjectSchemaRelation);
+router.post('/createsubjectschemarel', uploadMiddleware, createSubjectSchemaRelation);
 router.get('/getsubjectbyid/:id', authMiddleware, getSubjectSchemaRelationById);
 router.delete('/deletesubjectbyid/:id', authMiddleware, deleteSubjectSchemaRelationById);
 router.put('/updatesubjectbyid/:id', authMiddleware, uploadMiddleware, updateSubjectSchemaRelation);
