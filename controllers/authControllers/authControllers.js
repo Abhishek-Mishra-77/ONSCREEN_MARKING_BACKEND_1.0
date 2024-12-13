@@ -131,31 +131,31 @@ const verifyOtp = async (req, res) => {
         const otpRecord = await Otp.findOne({ user: userId, otp });
 
         if (!otpRecord) {
-        // Validate user ID
+            // Validate user ID
             return res.status(400).json({ message: "Invalid OTP" });
         }
 
         if (otpRecord.expiresAt < Date.now()) {
             await Otp.deleteOne({ user: userId, otp });
-        // Find OTP record for the user
+            // Find OTP record for the user
             await User.deleteOne({ _id: userId });
             return res.status(400).json({ message: "OTP has expired. User account deleted." });
         }
 
         if (otpRecord.attempts >= 3) {
             await Otp.deleteOne({ user: userId, otp });
-        // Check if OTP has expired
+            // Check if OTP has expired
             await User.deleteOne({ _id: userId });
             return res.status(400).json({ message: "Maximum attempts exceeded. User account deleted." });
         }
 
         if (otpRecord.otp === otp) {
             await Otp.deleteOne({ user: userId, otp });
-        // Check if maximum attempts have been exceeded
+            // Check if maximum attempts have been exceeded
             const user = await User.findById(userId);
             const token = jwt.sign(
                 { userId: user._id, email: user.email, role: user.role },
-        // Validate OTP
+                // Validate OTP
                 process.env.JWT_SECRET,
                 { expiresIn: "24h" }
             );
@@ -266,8 +266,6 @@ const getAllUsers = async (req, res) => {
         res.status(500).json({ message: "Failed to fetch users", error: error.message });
     }
 }
-
-
 
 /* -------------------------------------------------------------------------- */
 /*                           UPDATE USER DETAILS                              */

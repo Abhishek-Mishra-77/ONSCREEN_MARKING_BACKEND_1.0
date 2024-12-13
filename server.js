@@ -27,7 +27,6 @@ const __dirname = path.resolve();
 app.use('/uploadedPdfs', express.static(path.join(__dirname, 'uploadedPdfs')));
 
 
-
 /* -------------------------------------------------------------------------- */
 /*                           ROUTES ORIGIN                                    */
 /* -------------------------------------------------------------------------- */
