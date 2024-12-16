@@ -23,6 +23,14 @@ const courseSchemaRelation = new mongoose.Schema({
         type: String,
         required: true
     },
+    relationName: {
+        type: String,
+        required: true
+    },
+    coordinateStatus: {
+        type: Boolean,
+        required: false
+    },
     countOfQuestionImages: {
         type: Number,
         required: true

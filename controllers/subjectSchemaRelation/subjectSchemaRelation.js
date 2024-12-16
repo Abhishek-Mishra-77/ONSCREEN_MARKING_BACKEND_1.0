@@ -8,10 +8,7 @@ import extractImagesFromPdf from "./extractingPdfImages.js";
 
 const createSubjectSchemaRelation = async (req, res) => {
     try {
-        const { schemaId, subjectId } = req.body;
-
-        console.log(schemaId + " -> SCHEMAID")
-        console.log(subjectId + " -> SUBJECTID")
+        const { schemaId, subjectId, relationName } = req.body;
 
         if (!schemaId || !subjectId || !req.files.questionPdf || !req.files.answerPdf) {
             return res.status(400).json({ message: "All fields are required." });
@@ -19,6 +16,10 @@ const createSubjectSchemaRelation = async (req, res) => {
 
         if (!isValidObjectId(subjectId) || !isValidObjectId(schemaId)) {
             return res.status(400).json({ message: "Invalid subjectId or schemaId." });
+        }
+
+        if (!relationName) {
+            return res.status(400).json({ message: "Relation name is required." });
         }
 
         const isValidSubject = await Subject.findOne({ _id: subjectId });
@@ -32,6 +33,13 @@ const createSubjectSchemaRelation = async (req, res) => {
         if (!isValidSchema) {
             return res.status(404).json({ message: "Schema not found." });
         }
+
+        const isRelationNameUnique = await SubjectSchemaRelation.findOne({ subjectId: subjectId, schemaId: schemaId, relationName: relationName });
+
+        if (isRelationNameUnique) {
+            return res.status(400).json({ message: "Relation name already exists." });
+        }
+
 
         // Define base directories
         const baseDir = path.resolve(process.cwd(), 'uploadedPdfs');
@@ -74,6 +82,8 @@ const createSubjectSchemaRelation = async (req, res) => {
             answerPdfPath: `${path.basename(answerPdf.filename, '.pdf')}`,
             countOfQuestionImages: questionImageCount,
             countOfAnswerImages: answerImageCount,
+            relationName: relationName,
+            coordinateStatus: false
         });
 
         const savedSubjectSchemaRelation = await newSubjectSchemaRelation.save();
@@ -159,10 +169,10 @@ const deleteSubjectSchemaRelationById = async (req, res) => {
 const updateSubjectSchemaRelation = async (req, res) => {
     const { id } = req.params;
     try {
-        const { schemaId, subjectId } = req.body;
+        const { schemaId, subjectId, relationName, coordinateStatus } = req.body;
 
-        if (!schemaId || !subjectId) {
-            return res.status(400).json({ message: 'SchemaId and SubjectId are required.' });
+        if (!schemaId || !subjectId || !relationName) {
+            return res.status(400).json({ message: 'SchemaId , RelationName and SubjectId  are required.' });
         }
 
         if (!isValidObjectId(subjectId) || !isValidObjectId(schemaId)) {
@@ -179,13 +189,14 @@ const updateSubjectSchemaRelation = async (req, res) => {
             return res.status(404).json({ message: 'SubjectSchemaRelation not found.' });
         }
 
+
         const baseDir = path.resolve(process.cwd(), 'uploadedPdfs');
         const questionPdfDir = path.join(baseDir, 'questionPdfs');
         const answerPdfDir = path.join(baseDir, 'answerPdfs');
         const extractedQuestionImageDir = path.join(baseDir, 'extractedQuestionPdfImages');
         const extractedAnswerImageDir = path.join(baseDir, 'extractedAnswerPdfImages');
 
-        let updatedFields = {};
+        let updatedFields = { coordinateStatus, relationName };
 
         // Handle Question PDF Replacement
         if (req.files.questionPdf) {
@@ -209,6 +220,7 @@ const updateSubjectSchemaRelation = async (req, res) => {
 
             updatedFields.questionPdfPath = path.basename(questionPdf.filename, '.pdf');
             updatedFields.countOfQuestionImages = questionImageCount;
+            updatedFields.relationName = relationName;
         }
 
         // Handle Answer PDF Replacement
@@ -233,6 +245,7 @@ const updateSubjectSchemaRelation = async (req, res) => {
 
             updatedFields.answerPdfPath = path.basename(answerPdf.filename, '.pdf');
             updatedFields.countOfAnswerImages = answerImageCount;
+            updatedFields.relationName = relationName;
         }
 
         // Update the database record
@@ -248,6 +261,7 @@ const updateSubjectSchemaRelation = async (req, res) => {
         res.status(500).json({ error: 'An error occurred while updating the subject schema relation.' });
     }
 };
+
 const getAllSubjectSchemaRelationBySubjectId = async (req, res) => {
     const { subjectId } = req.params;
     try {

@@ -31,6 +31,10 @@ const schemaSchema = new mongoose.Schema({
         default: 0,
         min: [0, "Compulsory questions cannot be negative."]
     },
+    status: {
+        type: Boolean,
+        default: false
+    },
     evaluationTime: {
         type: Number,
         required: true,

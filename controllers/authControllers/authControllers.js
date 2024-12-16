@@ -5,7 +5,6 @@ import sendOtpEmail from '../../services/otpService.js';
 import jwt from "jsonwebtoken";
 import { isValidObjectId } from '../../services/mongoIdValidation.js';
 
-
 /* -------------------------------------------------------------------------- */
 /*                           USER CREATION                                    */
 /* -------------------------------------------------------------------------- */
@@ -249,7 +248,6 @@ const getUserById = async (req, res) => {
     }
 }
 
-
 /* -------------------------------------------------------------------------- */
 /*                           GET ALL USERS                                    */
 /* -------------------------------------------------------------------------- */
@@ -291,7 +289,6 @@ const updateUserDetails = async (req, res) => {
     }
 
 }
-
 
 /* -------------------------------------------------------------------------- */
 /*                           CREATE USERS BY CSV UPLOAD                       */

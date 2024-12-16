@@ -1,7 +1,6 @@
 import Schema from "../../models/schemeModel/schema.js";
 import QuestionDefinition from "../../models/schemeModel/questionDefinitionSchema.js";
 
-
 /* -------------------------------------------------------------------------- */
 /*                           CREATE SCHEMA                                    */
 /* -------------------------------------------------------------------------- */
@@ -39,6 +38,7 @@ const createSchema = async (req, res) => {
             compulsoryQuestions,
             evaluationTime,
             isActive,
+            status: false
         });
 
         const savedSchema = await newSchema.save();
@@ -55,7 +55,7 @@ const createSchema = async (req, res) => {
 
 const updateSchema = async (req, res) => {
     const { id } = req.params;
-    const { name, totalQuestions, maxMarks, minMarks, compulsoryQuestions, evaluationTime, isActive } = req.body;
+    const { name, totalQuestions, maxMarks, minMarks, compulsoryQuestions, evaluationTime, status, isActive } = req.body;
 
     try {
         // Check if all required fields are present
@@ -96,6 +96,7 @@ const updateSchema = async (req, res) => {
         schema.compulsoryQuestions = compulsoryQuestions;
         schema.evaluationTime = evaluationTime;
         schema.isActive = isActive;
+        status.status = status
 
         const updatedSchema = await schema.save();
         return res.status(200).json(updatedSchema);
@@ -156,5 +157,18 @@ const removeSchema = async (req, res) => {
     }
 };
 
+/* -------------------------------------------------------------------------- */
+/*                           GET ALL SCHEMA  STATUS                           */
+/* -------------------------------------------------------------------------- */
+const getAllCompletedSchema = async (req, res) => {
+    try {
+        const schemas = await Schema.find({ status: true });
+        return res.status(200).json(schemas);
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: "An error occurred while retrieving the schemas." });
+    }
+}
 
-export { createSchema, updateSchema, getSchemaById, getAllSchemas, removeSchema };
+
+export { createSchema, updateSchema, getSchemaById, getAllSchemas, removeSchema, getAllCompletedSchema };

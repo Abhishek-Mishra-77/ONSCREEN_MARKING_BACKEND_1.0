@@ -12,6 +12,7 @@ import subjectRoutes from "./routes/subjectRoutes/subjectRoute.js";
 import schemaRoutes from "./routes/schemeRoutes/schemaRoutes.js";
 import questionDefinitionRoutes from './routes/schemeRoutes/questionDefinitionRoutes.js';
 import subjectQuestionRelationRoutes from "./routes/subjectSchemaRelationRoutes/subjectSchemaRelationRoutes.js";
+import coordinateAllocation from "./routes/subjectSchemaRelationRoutes/coordinateAllocationRoutes.js";
 
 
 /* -------------------------------------------------------------------------- */
@@ -37,6 +38,7 @@ app.use("/api/subjects", subjectRoutes);
 app.use("/api/schemas", schemaRoutes);
 app.use("/api/schemas", questionDefinitionRoutes);
 app.use("/api/subjects/relations", subjectQuestionRelationRoutes);
+app.use("/api/coordinates", coordinateAllocation);
 
 
 const PORT = process.env.PORT || 5000;
