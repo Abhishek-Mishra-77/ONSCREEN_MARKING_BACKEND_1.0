@@ -115,9 +115,6 @@ const updateCoordinateAllocation = async (req, res) => {
             return res.status(404).json({ message: "Question not found." });
         }
 
-
-
-
         // Check if the CoordinateAllocation exists
         const coordinateAllocation = await CoordinateAllocation.findById(id);
 

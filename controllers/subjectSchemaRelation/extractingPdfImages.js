@@ -3,6 +3,9 @@ import path from 'path';
 import poppler from 'pdf-poppler';
 
 
+/* -------------------------------------------------------------------------- */
+/*                             EXTRACT PDF IMAGES                             */
+/* -------------------------------------------------------------------------- */
 const extractImagesFromPdf = async (pdfPath, outputDir) => {
     if (!fs.existsSync(outputDir)) {
         fs.mkdirSync(outputDir, { recursive: true });

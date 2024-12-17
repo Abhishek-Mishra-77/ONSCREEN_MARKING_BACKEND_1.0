@@ -6,6 +6,11 @@ import fs from 'fs';
 import path from 'path';
 import extractImagesFromPdf from "./extractingPdfImages.js";
 
+
+
+/* -------------------------------------------------------------------------- */
+/*                              CREATE SUBJECT SCHEMA RELATION                */
+/* -------------------------------------------------------------------------- */
 const createSubjectSchemaRelation = async (req, res) => {
     try {
         const { schemaId, subjectId, relationName } = req.body;
@@ -95,6 +100,10 @@ const createSubjectSchemaRelation = async (req, res) => {
     }
 };
 
+
+/* -------------------------------------------------------------------------- */
+/*                           GET SUBJECT SCHEMA RELATION                      */
+/* -------------------------------------------------------------------------- */
 const getSubjectSchemaRelationById = async (req, res) => {
     const { id } = req.params;
 
@@ -116,6 +125,10 @@ const getSubjectSchemaRelationById = async (req, res) => {
     }
 }
 
+
+/* -------------------------------------------------------------------------- */
+/*                           DELETE SUBJECT SCHEMA RELATION                   */
+/* -------------------------------------------------------------------------- */
 const deleteSubjectSchemaRelationById = async (req, res) => {
     const { id } = req.params;
 
@@ -166,6 +179,9 @@ const deleteSubjectSchemaRelationById = async (req, res) => {
     }
 };
 
+/* -------------------------------------------------------------------------- */
+/*                           UPDATE SUBJECT SCHEMA RELATION                   */
+/* -------------------------------------------------------------------------- */
 const updateSubjectSchemaRelation = async (req, res) => {
     const { id } = req.params;
     try {
@@ -262,6 +278,9 @@ const updateSubjectSchemaRelation = async (req, res) => {
     }
 };
 
+/* -------------------------------------------------------------------------- */
+/*                           GET ALL SUBJECT SCHEMA RELATION                  */
+/* -------------------------------------------------------------------------- */
 const getAllSubjectSchemaRelationBySubjectId = async (req, res) => {
     const { subjectId } = req.params;
     try {
@@ -283,6 +302,9 @@ const getAllSubjectSchemaRelationBySubjectId = async (req, res) => {
         res.status(500).json({ error: 'An error occurred while retrieving the subject schema relations.' });
     }
 }
+/* -------------------------------------------------------------------------- */
+/*                           GET ALL SUBJECT SCHEMA RELATION                  */
+/* -------------------------------------------------------------------------- */
 
 const getAllSubjectSchemaRelationBySchemaId = async (req, res) => {
     const { schemaId } = req.params;
@@ -306,8 +328,9 @@ const getAllSubjectSchemaRelationBySchemaId = async (req, res) => {
         res.status(500).json({ error: 'An error occurred while retrieving the subject schema relations.' });
     }
 }
-
-
+/* -------------------------------------------------------------------------- */
+/*                           GET ALL SUBJECT SCHEMA RELATION                  */
+/* -------------------------------------------------------------------------- */
 
 const getAllSubjectSchemaRelationBySchemaIdAndSubjectId = async (req, res) => {
     const { schemaId, subjectId } = req.params;
