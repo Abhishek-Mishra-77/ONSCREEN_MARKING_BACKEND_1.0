@@ -103,18 +103,6 @@ const updateCoordinateAllocation = async (req, res) => {
             return res.status(400).json({ message: "QuestionImages must be an array." });
         }
 
-        // Check if CourseSchemaRelationId exists
-        const courseSchemaRelation = await CourseSchemaRelation.findById(courseSchemaRelationId);
-        if (!courseSchemaRelation) {
-            return res.status(404).json({ message: "CourseSchemaRelation not found." });
-        }
-
-        // Check if QuestionId exists
-        const question = await QuestionDefinition.findById(questionId);
-        if (!question) {
-            return res.status(404).json({ message: "Question not found." });
-        }
-
         // Check if the CoordinateAllocation exists
         const coordinateAllocation = await CoordinateAllocation.findById(id);
 
