@@ -22,6 +22,7 @@ router.post('/createsubjectschemarel', authMiddleware, uploadMiddleware, createS
 router.get('/getsubjectbyid/:id', authMiddleware, getSubjectSchemaRelationById);
 router.delete('/deletesubjectbyid/:id', authMiddleware, deleteSubjectSchemaRelationById);
 router.put('/updatesubjectbyid/:id', authMiddleware, uploadMiddleware, updateSubjectSchemaRelation);
+// router.put('/updatesubjectstatusbyid/:id', updateSubjectSchemaRelationStatus);
 router.get('/getallsubjectbyid/:subjectId', authMiddleware, getAllSubjectSchemaRelationBySubjectId);
 router.get('/getallschemabyid/:schemaId', authMiddleware, getAllSubjectSchemaRelationBySchemaId);
 router.get('/getallschemabyidandsubjectid/:schemaId/:subjectId', authMiddleware, getAllSubjectSchemaRelationBySchemaIdAndSubjectId);

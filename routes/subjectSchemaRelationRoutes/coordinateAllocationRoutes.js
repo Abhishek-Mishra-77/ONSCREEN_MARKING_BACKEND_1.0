@@ -6,7 +6,8 @@ import {
     updateCoordinateAllocation,
     deleteCoordinateAllocation,
     getCoordinateAllocationById,
-    getCoordinateAllocationBySubjectSchemaRelationId
+    getCoordinateAllocationBySubjectSchemaRelationId,
+    getCoordinateAllocationBySubjectIdStatusTrue
 } from "../../controllers/subjectSchemaRelation/coordinateAllocation.js";
 import authMiddleware from "../../Middlewares/authMiddleware.js";
 
@@ -18,6 +19,7 @@ router.post("/createcoordinateallocation", authMiddleware, createCoordinateAlloc
 router.put("/updatecoordinateallocation/:id", authMiddleware, updateCoordinateAllocation);
 router.delete("/deletecoordinateallocation/:id", authMiddleware, deleteCoordinateAllocation);
 router.get("/getcoordinateallocationbyid/:id", authMiddleware, getCoordinateAllocationById);
+router.get("/getcoordinateallocationbysubjectidstatustrue/:courseSchemaRelationId", authMiddleware, getCoordinateAllocationBySubjectIdStatusTrue);
 router.get("/getcoordinateallocationbyschemarelationid/:courseSchemaRelationId", authMiddleware, getCoordinateAllocationBySubjectSchemaRelationId);
 
 

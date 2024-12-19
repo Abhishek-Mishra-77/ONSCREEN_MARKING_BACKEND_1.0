@@ -96,7 +96,7 @@ const updateSchema = async (req, res) => {
         schema.compulsoryQuestions = compulsoryQuestions;
         schema.evaluationTime = evaluationTime;
         schema.isActive = isActive;
-        status.status = status
+        schema.status = status
 
         const updatedSchema = await schema.save();
         return res.status(200).json(updatedSchema);

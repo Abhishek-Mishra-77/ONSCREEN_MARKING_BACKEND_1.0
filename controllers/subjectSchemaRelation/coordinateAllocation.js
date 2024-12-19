@@ -3,7 +3,6 @@ import { isValidObjectId } from "../../services/mongoIdValidation.js";
 import CourseSchemaRelation from "../../models/subjectSchemaRelationModel/subjectSchemaRelationModel.js";
 import QuestionDefinition from "../../models/schemeModel/questionDefinitionSchema.js";
 
-
 /* -------------------------------------------------------------------------- */
 /*                              CREATE COORDINATE ALLOCATION                  */
 /* -------------------------------------------------------------------------- */
@@ -203,10 +202,37 @@ const getCoordinateAllocationBySubjectSchemaRelationId = async (req, res) => {
     }
 };
 
+/* -------------------------------------------------------------------------- */
+/*         GET COORDINATE ALLOCATION BY SUBJECT ID THOSE STATUS TRUE          */
+/* -------------------------------------------------------------------------- */
+
+const getCoordinateAllocationBySubjectIdStatusTrue = async (req, res) => {
+    try {
+        const { courseSchemaRelationId } = req.params;
+
+        // Validate SubjectId
+        if (!courseSchemaRelationId) {
+            return res.status(400).json({ message: "SubjectId is required." });
+        }
+
+        const coordinateAllocations = await CoordinateAllocation.find({ courseSchemaRelationId, status: true });
+
+        if (!coordinateAllocations || coordinateAllocations.length === 0) {
+            return res.status(404).json({ message: "No Coordinate Allocations found for the given courseSchemaRelationId." });
+        }
+
+        res.status(200).json(coordinateAllocations);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching Coordinate Allocations.", error: error.message });
+    }
+};
+
 export {
     createCoordinateAllocation,
     updateCoordinateAllocation,
     deleteCoordinateAllocation,
     getCoordinateAllocationById,
-    getCoordinateAllocationBySubjectSchemaRelationId
+    getCoordinateAllocationBySubjectSchemaRelationId,
+    getCoordinateAllocationBySubjectIdStatusTrue
 };

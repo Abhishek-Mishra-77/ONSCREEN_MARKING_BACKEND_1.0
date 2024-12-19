@@ -1,7 +1,8 @@
 import SubjectSchemaRelation from "../../models/subjectSchemaRelationModel/subjectSchemaRelationModel.js";
 import Subject from "../../models/classModel/subjectModel.js";
-import Schema from "../../models/schemeModel/schema.js";
+import QuestionDefinition from "../../models/schemeModel/questionDefinitionSchema.js";
 import { isValidObjectId } from "../../services/mongoIdValidation.js";
+import CoordinateAllocation from "../../models/subjectSchemaRelationModel/coordinateAllocationModel.js";
 import fs from 'fs';
 import path from 'path';
 import extractImagesFromPdf from "./extractingPdfImages.js";
@@ -184,7 +185,7 @@ const deleteSubjectSchemaRelationById = async (req, res) => {
 const updateSubjectSchemaRelation = async (req, res) => {
     const { id } = req.params;
     try {
-        const { schemaId, subjectId, relationName, coordinateStatus } = req.body;
+        const { schemaId, subjectId, relationName } = req.body;
 
         if (!schemaId || !subjectId || !relationName) {
             return res.status(400).json({ message: 'SchemaId , RelationName and SubjectId  are required.' });
@@ -211,7 +212,7 @@ const updateSubjectSchemaRelation = async (req, res) => {
         const extractedQuestionImageDir = path.join(baseDir, 'extractedQuestionPdfImages');
         const extractedAnswerImageDir = path.join(baseDir, 'extractedAnswerPdfImages');
 
-        let updatedFields = { coordinateStatus, relationName };
+        let updatedFields = { relationName };
 
         // Handle Question PDF Replacement
         if (req.files.questionPdf) {
@@ -276,6 +277,62 @@ const updateSubjectSchemaRelation = async (req, res) => {
         res.status(500).json({ error: 'An error occurred while updating the subject schema relation.' });
     }
 };
+
+/* -------------------------------------------------------------------------- */
+/*                  UPDATE SUBJECT SCHEMA RELATION STATUS                     */
+/* -------------------------------------------------------------------------- */
+
+// const updateSubjectSchemaRelationStatus = async (req, res) => {
+//     const { id } = req.params;
+//     const { coordinateStatus } = req.body;
+
+//     try {
+
+//         if (!isValidObjectId(id)) {
+//             return res.status(400).json({ message: 'subject schema relation ID is invalid.' });
+//         }
+
+//         const subjectSchemaRelation = await SubjectSchemaRelation.findById(id);
+
+//         if (!subjectSchemaRelation) {
+//             return res.status(404).json({ message: 'subject schema relation not found.' });
+//         }
+
+//         const questionDetails = await QuestionDefinition.find({ schemaId: subjectSchemaRelation.schemaId });
+
+//         if (!questionDetails) {
+//             return res.status(404).json({ message: 'Schema not found.' });
+//         }
+
+//         console.log(questionDetails)
+
+//         const totalQuestions = questionDetails.totalQuestions;
+
+//         const coordinateAllocations = await CoordinateAllocation.find({ courseSchemaRelationId: subjectSchemaRelation._id });
+
+//         if (!coordinateAllocations) {
+//             return res.status(404).json({ message: 'Coordinate Allocations not found.' });
+//         }
+
+
+//         if (coordinateAllocations.length < totalQuestions) {
+//             return res.status(404).json({ message: ' Please complete all the coordinates.' });
+//         }
+
+//         return;
+
+//         const updatedSubjectSchemaRelation = await SubjectSchemaRelation.findByIdAndUpdate(
+//             id,
+//             { $set: { coordinateStatus } },
+//             { new: true }
+//         );
+
+//         res.status(200).json(updatedSubjectSchemaRelation); // Return the updated subject schema relation
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ error: 'An error occurred while updating the subject schema relation status.' });
+//     }
+// }
 
 /* -------------------------------------------------------------------------- */
 /*                           GET ALL SUBJECT SCHEMA RELATION                  */
@@ -365,5 +422,5 @@ export {
     updateSubjectSchemaRelation,
     getAllSubjectSchemaRelationBySubjectId,
     getAllSubjectSchemaRelationBySchemaId,
-    getAllSubjectSchemaRelationBySchemaIdAndSubjectId
+    getAllSubjectSchemaRelationBySchemaIdAndSubjectId,
 }
