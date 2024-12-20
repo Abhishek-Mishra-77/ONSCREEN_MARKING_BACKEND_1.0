@@ -41,8 +41,6 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 
 
-// Routes
-app.use('/api', fileManagerRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/classes", classRoutes);
 app.use("/api/subjects", subjectRoutes);
@@ -50,6 +48,7 @@ app.use("/api/schemas", schemaRoutes);
 app.use("/api/schemas", questionDefinitionRoutes);
 app.use("/api/subjects/relations", subjectQuestionRelationRoutes);
 app.use("/api/coordinates", coordinateAllocation);
+app.use('/api/filemanager', fileManagerRoutes);
 app.use("/api/tasks", taskRoutes);
 
 /* -------------------------------------------------------------------------- */

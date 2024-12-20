@@ -8,6 +8,7 @@ const __dirname = path.dirname(__filename);
 const rootFolder = path.join(__dirname, '..', '..', process.env.BASE_DIR);
 
 
+
 // Ensure the root folder exists
 fs.ensureDirSync(rootFolder);
 
@@ -16,7 +17,15 @@ export const listFiles = (req, res) => {
 
     const folderPath = path.join(rootFolder, relativePath || '/');
 
+    if (!fs.existsSync(rootFolder)) {
+        fs.mkdirSync(rootFolder, { recursive: true });
+        console.log(`${rootFolder} created successfully.`);
+    } else {
+    }
+
+
     if (action === 'read') {
+        // Read files logic
         fs.readdir(folderPath, { withFileTypes: true }, (err, items) => {
             if (err) {
                 return res.status(500).json({ error: err.message });
@@ -166,10 +175,25 @@ export const listFiles = (req, res) => {
                 details: null,
             });
         });
+    } else if (action === 'delete') {
+        // Remove logic
+        fs.rm(folderPath, { recursive: true, force: true }, (err) => {
+            if (err) {
+                return res.status(500).json({ error: err.message });
+            }
+
+            res.json({
+                cwd: null,
+                files: [],
+                error: null,
+                details: null,
+            });
+        });
     } else {
         res.status(400).json({ error: 'Invalid action.' });
     }
 };
+
 
 export const uploadFile = (req, res) => {
     if (!req.file) {
