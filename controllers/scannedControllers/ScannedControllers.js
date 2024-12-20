@@ -61,42 +61,29 @@ const createFolder = async (req, res) => {
 // Get all files and folders in the main directory or nested paths
 const getAllFiles = (req, res) => {
     try {
-        const requestedPath = req.body.path || ''; // Path from the request
-        const sanitizedPath = path.normalize(requestedPath).replace(/^(\.\.(\/|\\|$))+/g, ''); // Sanitize path
-        const fullPath = path.join(baseDir, sanitizedPath);
+        const { action, name, path } = req.body;
 
-        // Ensure the fullPath exists
-        if (!fs.existsSync(fullPath)) {
-            return res.status(404).json({ error: 'Path not found.' });
-        }
-
-        // Function to retrieve directory structure (folders and files)
-        const getDirectoryStructure = (dirPath) => {
-            const items = fs.readdirSync(dirPath); // Get all items (files and folders)
-            return items.map((item) => {
-                const itemPath = path.join(dirPath, item);
-                const stats = fs.statSync(itemPath);
-                return {
-                    name: item,
-                    size: stats.isFile() ? stats.size : 0, // Include size for files
-                    dateModified: stats.mtime, // Last modified date
-                    isFile: stats.isFile(), // Is it a file?
-                    hasChild: stats.isDirectory() && fs.readdirSync(itemPath).length > 0, // Does the folder have children?
-                };
+        if (action === 'create') {
+            const folderPath = path.join(baseDir, path || '', name);
+            if (!fs.existsSync(folderPath)) {
+                fs.mkdirSync(folderPath, { recursive: true });
+                res.status(201).send({ message: 'Folder created successfully' });
+            } else {
+                res.status(400).send({ message: 'Folder already exists' });
+            }
+        } else {
+            // Existing list files logic
+            fs.readdir(baseDir, { withFileTypes: true }, (err, files) => {
+                if (err) {
+                    return res.status(500).send({ message: 'Error reading directory' });
+                }
+                const fileList = files.map((file) => ({
+                    name: file.name,
+                    isDirectory: file.isDirectory(),
+                }));
+                res.send(fileList);
             });
-        };
-
-        // Retrieve files and folders for the requested path
-        const files = getDirectoryStructure(fullPath);
-
-        res.status(200).json({
-            cwd: {
-                name: sanitizedPath || 'scanned',
-                path: sanitizedPath,
-                isFile: false,
-            },
-            files, // Send the list of files and folders
-        });
+        }
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'An error occurred while retrieving files.' });

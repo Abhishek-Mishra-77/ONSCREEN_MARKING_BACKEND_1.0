@@ -15,7 +15,8 @@ import questionDefinitionRoutes from "./routes/schemeRoutes/questionDefinitionRo
 import subjectQuestionRelationRoutes from "./routes/subjectSchemaRelationRoutes/subjectSchemaRelationRoutes.js";
 import coordinateAllocation from "./routes/subjectSchemaRelationRoutes/coordinateAllocationRoutes.js";
 import scannedRoutes from "./routes/scannedRoutes/scannedRoutes.js";
-
+import taskRoutes from "./routes/taskRoutes/taskRoutes.js";
+import fileManagerRoutes from "./routes/fileManagerRoute.js";
 /* -------------------------------------------------------------------------- */
 /*                           SERVER CONFIGURATION                             */
 /* -------------------------------------------------------------------------- */
@@ -34,12 +35,17 @@ app.use(cors());
 
 // Static file serving
 app.use('/uploadedPdfs', express.static(path.join(__dirname, 'uploadedPdfs')));
-app.use('/scanned', express.static(path.join(__dirname, 'scanned')));
-
+// app.use('/scanned', express.static(path.join(__dirname, 'scanned')));
+// Static Files (for downloads)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 /* -------------------------------------------------------------------------- */
 /*                           ROUTES ORIGIN                                    */
 /* -------------------------------------------------------------------------- */
 
+
+
+// Routes
+app.use('/api', fileManagerRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/classes", classRoutes);
 app.use("/api/subjects", subjectRoutes);
@@ -48,6 +54,7 @@ app.use("/api/schemas", questionDefinitionRoutes);
 app.use("/api/subjects/relations", subjectQuestionRelationRoutes);
 app.use("/api/coordinates", coordinateAllocation);
 app.use("/api/scanned", scannedRoutes);
+app.use("/api/tasks", taskRoutes);
 
 /* -------------------------------------------------------------------------- */
 /*                           SERVER AND DATABASE SETUP                        */
