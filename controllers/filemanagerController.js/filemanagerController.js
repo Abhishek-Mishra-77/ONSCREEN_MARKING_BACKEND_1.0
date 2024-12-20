@@ -2,15 +2,10 @@ import path from 'path';
 import fs from 'fs-extra';
 import { fileURLToPath } from 'url';
 
-// Root folder for file operations
-
-
-// Resolve __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Base directory from environment variables
-const rootFolder = path.join(__dirname, '..', process.env.BASE_DIR);
+const rootFolder = path.join(__dirname, '..', '..', process.env.BASE_DIR);
 
 
 // Ensure the root folder exists
@@ -19,14 +14,9 @@ fs.ensureDirSync(rootFolder);
 export const listFiles = (req, res) => {
     const { action, path: relativePath, name: newName } = req.body;
 
-    // Resolve the absolute path based on the relative path provided in the request
     const folderPath = path.join(rootFolder, relativePath || '/');
 
     if (action === 'read') {
-        // Read the contents of the directory
-        // Read the contents of the directory
-        // const folderPath = path.join(rootFolder, relativePath || '');
-
         fs.readdir(folderPath, { withFileTypes: true }, (err, items) => {
             if (err) {
                 return res.status(500).json({ error: err.message });
@@ -111,7 +101,6 @@ export const listFiles = (req, res) => {
             if (err) {
                 return res.status(500).json({ error: err.message });
             }
-
             const currentDate = new Date();
 
             res.json({

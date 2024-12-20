@@ -4,6 +4,7 @@ import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
 
+
 import database from "./utils/database.js";
 import createInitialUser from "./services/initialUserCreation.js";
 
@@ -14,14 +15,12 @@ import schemaRoutes from "./routes/schemeRoutes/schemaRoutes.js";
 import questionDefinitionRoutes from "./routes/schemeRoutes/questionDefinitionRoutes.js";
 import subjectQuestionRelationRoutes from "./routes/subjectSchemaRelationRoutes/subjectSchemaRelationRoutes.js";
 import coordinateAllocation from "./routes/subjectSchemaRelationRoutes/coordinateAllocationRoutes.js";
-import scannedRoutes from "./routes/scannedRoutes/scannedRoutes.js";
 import taskRoutes from "./routes/taskRoutes/taskRoutes.js";
-import fileManagerRoutes from "./routes/fileManagerRoute.js";
+import fileManagerRoutes from "./routes/filemanagerRoutes.js/fileManagerRoute.js";
 /* -------------------------------------------------------------------------- */
 /*                           SERVER CONFIGURATION                             */
 /* -------------------------------------------------------------------------- */
 
-// Resolve __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -29,15 +28,13 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
 app.use(express.json());
 app.use(cors());
 
-// Static file serving
 app.use('/uploadedPdfs', express.static(path.join(__dirname, 'uploadedPdfs')));
-// app.use('/scanned', express.static(path.join(__dirname, 'scanned')));
-// Static Files (for downloads)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+
 /* -------------------------------------------------------------------------- */
 /*                           ROUTES ORIGIN                                    */
 /* -------------------------------------------------------------------------- */
@@ -53,7 +50,6 @@ app.use("/api/schemas", schemaRoutes);
 app.use("/api/schemas", questionDefinitionRoutes);
 app.use("/api/subjects/relations", subjectQuestionRelationRoutes);
 app.use("/api/coordinates", coordinateAllocation);
-app.use("/api/scanned", scannedRoutes);
 app.use("/api/tasks", taskRoutes);
 
 /* -------------------------------------------------------------------------- */
