@@ -185,7 +185,7 @@ const deleteSubjectSchemaRelationById = async (req, res) => {
 const updateSubjectSchemaRelation = async (req, res) => {
     const { id } = req.params;
     try {
-        const { schemaId, subjectId, relationName } = req.body;
+        const { schemaId, subjectId, relationName, coordinateStatus } = req.body;
 
         if (!schemaId || !subjectId || !relationName) {
             return res.status(400).json({ message: 'SchemaId , RelationName and SubjectId  are required.' });
@@ -212,7 +212,7 @@ const updateSubjectSchemaRelation = async (req, res) => {
         const extractedQuestionImageDir = path.join(baseDir, 'extractedQuestionPdfImages');
         const extractedAnswerImageDir = path.join(baseDir, 'extractedAnswerPdfImages');
 
-        let updatedFields = { relationName };
+        let updatedFields = { relationName, coordinateStatus };
 
         // Handle Question PDF Replacement
         if (req.files.questionPdf) {
@@ -237,6 +237,7 @@ const updateSubjectSchemaRelation = async (req, res) => {
             updatedFields.questionPdfPath = path.basename(questionPdf.filename, '.pdf');
             updatedFields.countOfQuestionImages = questionImageCount;
             updatedFields.relationName = relationName;
+            updatedFields.coordinateStatus = coordinateStatus;
         }
 
         // Handle Answer PDF Replacement
@@ -262,6 +263,7 @@ const updateSubjectSchemaRelation = async (req, res) => {
             updatedFields.answerPdfPath = path.basename(answerPdf.filename, '.pdf');
             updatedFields.countOfAnswerImages = answerImageCount;
             updatedFields.relationName = relationName;
+            updatedFields.coordinateStatus = coordinateStatus;
         }
 
         // Update the database record
@@ -415,6 +417,29 @@ const getAllSubjectSchemaRelationBySchemaIdAndSubjectId = async (req, res) => {
 
 }
 
+const getAllSubjectSchemaRelationBySubjectIdCoordinateStatusTrue = async (req, res) => {
+    const { subjectId } = req.params;
+
+    try {
+
+        if (!isValidObjectId(subjectId)) {
+            return res.status(400).json({ message: "Invalid subject ID." });
+        }
+
+        const subjectSchemaRelations = await SubjectSchemaRelation.find({ subjectId: subjectId, coordinateStatus: true });
+
+        if (!subjectSchemaRelations) {
+            return res.status(404).json({ message: "Subject schema relations not found." });
+        }
+
+        res.status(200).json(subjectSchemaRelations);
+
+    }
+    catch (error) {
+        return res.status(500).json({ error: 'An error occurred while retrieving the subject schema relations.' });
+    }
+}
+
 export {
     createSubjectSchemaRelation,
     getSubjectSchemaRelationById,
@@ -423,4 +448,5 @@ export {
     getAllSubjectSchemaRelationBySubjectId,
     getAllSubjectSchemaRelationBySchemaId,
     getAllSubjectSchemaRelationBySchemaIdAndSubjectId,
+    getAllSubjectSchemaRelationBySubjectIdCoordinateStatusTrue
 }

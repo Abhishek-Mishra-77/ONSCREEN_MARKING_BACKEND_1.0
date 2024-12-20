@@ -58,45 +58,44 @@ const createFolder = async (req, res) => {
 };
 
 
-// Get all files and folders in the main directory
+// Get all files and folders in the main directory or nested paths
 const getAllFiles = (req, res) => {
     try {
         const requestedPath = req.body.path || ''; // Path from the request
-        console.log(req.body.path)
-        const fullPath = path.join(baseDir, requestedPath);
+        const sanitizedPath = path.normalize(requestedPath).replace(/^(\.\.(\/|\\|$))+/g, ''); // Sanitize path
+        const fullPath = path.join(baseDir, sanitizedPath);
 
+        // Ensure the fullPath exists
         if (!fs.existsSync(fullPath)) {
             return res.status(404).json({ error: 'Path not found.' });
         }
 
-        // Function to retrieve directory structure
+        // Function to retrieve directory structure (folders and files)
         const getDirectoryStructure = (dirPath) => {
-            const items = fs.readdirSync(dirPath);
+            const items = fs.readdirSync(dirPath); // Get all items (files and folders)
             return items.map((item) => {
                 const itemPath = path.join(dirPath, item);
                 const stats = fs.statSync(itemPath);
                 return {
-                    name: item, // Ensure name is not undefined
-                    size: stats.isFile() ? stats.size : 0,
-                    dateModified: stats.mtime,
-                    isFile: stats.isFile(),
-                    hasChild: stats.isDirectory() && fs.readdirSync(itemPath).length > 0,
+                    name: item,
+                    size: stats.isFile() ? stats.size : 0, // Include size for files
+                    dateModified: stats.mtime, // Last modified date
+                    isFile: stats.isFile(), // Is it a file?
+                    hasChild: stats.isDirectory() && fs.readdirSync(itemPath).length > 0, // Does the folder have children?
                 };
             });
         };
 
-        // Fetch files and directories for the requested path
+        // Retrieve files and folders for the requested path
         const files = getDirectoryStructure(fullPath);
 
-        // Respond with the current working directory and files
         res.status(200).json({
             cwd: {
-                name: requestedPath || 'scanned',
-                size: 0,
-                dateModified: new Date(),
+                name: sanitizedPath || 'scanned',
+                path: sanitizedPath,
                 isFile: false,
             },
-            files: files,
+            files, // Send the list of files and folders
         });
     } catch (error) {
         console.error(error);
