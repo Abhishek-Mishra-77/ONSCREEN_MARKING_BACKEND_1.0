@@ -48,7 +48,6 @@ const assigningTask = async (req, res) => {
 
         // Resolve and validate folder path
         const absoluteFolderPath = path.resolve(rootFolder, '..', folderPath);
-        console.log("Resolved folder path:", absoluteFolderPath);
 
         // Check if the folder exists
         if (!fs.existsSync(absoluteFolderPath)) {
@@ -73,6 +72,11 @@ const assigningTask = async (req, res) => {
             return res.status(400).json({ message: "Unable to read folder contents." });
         }
 
+
+        if (totalFiles === 0) {
+            return res.status(400).json({ message: "Folder is empty total files are 0." });
+        }
+
         // Create and save the new task with the file count
         const newTask = new Task({
             userId,
@@ -92,10 +96,10 @@ const assigningTask = async (req, res) => {
 };
 
 const updateAssignedTask = async (req, res) => {
-    const { userId, subjectSchemaRelationId, folderPath, totalFiles, status } = req.body;
+    const { userId, subjectSchemaRelationId, folderPath, status } = req.body;
     try {
 
-        if (!userId || !subjectSchemaRelationId || !folderPath || !totalFiles || !status) {
+        if (!userId || !subjectSchemaRelationId || !folderPath) {
             return res.status(400).json({ message: "All fields are required" });
         }
 
@@ -108,12 +112,13 @@ const updateAssignedTask = async (req, res) => {
         }
 
         const user = await User.findById(userId);
+
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
 
-        const subjectSchemaRelation = await subjectSchemaRelation.findById(subjectSchemaRelationId);
-        if (!subjectSchemaRelation) {
+        const subjectSchemaRelationDetails = await subjectSchemaRelation.findById(subjectSchemaRelationId);
+        if (!subjectSchemaRelationDetails) {
             return res.status(404).json({ message: "SubjectSchemaRelation not found" });
         }
 
