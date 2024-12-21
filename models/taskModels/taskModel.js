@@ -15,7 +15,7 @@ const taskSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    noOfFiles: {
+    totalFiles: {
         type: Number,
         required: true
     },

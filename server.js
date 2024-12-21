@@ -17,6 +17,7 @@ import subjectQuestionRelationRoutes from "./routes/subjectSchemaRelationRoutes/
 import coordinateAllocation from "./routes/subjectSchemaRelationRoutes/coordinateAllocationRoutes.js";
 import taskRoutes from "./routes/taskRoutes/taskRoutes.js";
 import fileManagerRoutes from "./routes/filemanagerRoutes.js/fileManagerRoute.js";
+
 /* -------------------------------------------------------------------------- */
 /*                           SERVER CONFIGURATION                             */
 /* -------------------------------------------------------------------------- */
@@ -34,12 +35,9 @@ app.use(cors());
 app.use('/uploadedPdfs', express.static(path.join(__dirname, 'uploadedPdfs')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-
 /* -------------------------------------------------------------------------- */
 /*                           ROUTES ORIGIN                                    */
 /* -------------------------------------------------------------------------- */
-
-
 
 app.use("/api/auth", authRoutes);
 app.use("/api/classes", classRoutes);
@@ -54,6 +52,8 @@ app.use("/api/tasks", taskRoutes);
 /* -------------------------------------------------------------------------- */
 /*                           SERVER AND DATABASE SETUP                        */
 /* -------------------------------------------------------------------------- */
+
+
 
 app.listen(PORT, async () => {
     try {
