@@ -8,7 +8,6 @@ var location = "";
 var isRenameChecking = false;
 var accessDetails = null;
 import fs from 'fs';
-import yargs from 'yargs';
 import path from 'path';
 import archiver from 'archiver';
 import multer from 'multer';
