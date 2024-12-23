@@ -3,6 +3,8 @@ import dotenv from "dotenv";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
+import fileUpload from 'express-fileupload';
+
 
 
 import database from "./utils/database.js";
@@ -16,11 +18,15 @@ import questionDefinitionRoutes from "./routes/schemeRoutes/questionDefinitionRo
 import subjectQuestionRelationRoutes from "./routes/subjectSchemaRelationRoutes/subjectSchemaRelationRoutes.js";
 import coordinateAllocation from "./routes/subjectSchemaRelationRoutes/coordinateAllocationRoutes.js";
 import taskRoutes from "./routes/taskRoutes/taskRoutes.js";
-import fileManagerRoutes from "./routes/filemanagerRoutes.js/fileManagerRoute.js";
+import syncfusionController from "./controllers/syncfusionController/sycnfusionController.js";
 
 /* -------------------------------------------------------------------------- */
 /*                           SERVER CONFIGURATION                             */
 /* -------------------------------------------------------------------------- */
+
+
+// For handling file uploads
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -28,7 +34,7 @@ const __dirname = path.dirname(__filename);
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
-
+app.use(fileUpload());
 app.use(express.json());
 app.use(cors());
 
@@ -46,8 +52,9 @@ app.use("/api/schemas", schemaRoutes);
 app.use("/api/schemas", questionDefinitionRoutes);
 app.use("/api/subjects/relations", subjectQuestionRelationRoutes);
 app.use("/api/coordinates", coordinateAllocation);
-app.use('/api/filemanager', fileManagerRoutes);
 app.use("/api/tasks", taskRoutes);
+app.use(syncfusionController)
+
 
 /* -------------------------------------------------------------------------- */
 /*                           SERVER AND DATABASE SETUP                        */
