@@ -39,7 +39,7 @@ app.use(express.json());
 app.use(cors());
 
 app.use('/uploadedPdfs', express.static(path.join(__dirname, 'uploadedPdfs')));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/scannedData', express.static(path.join(__dirname, 'scannedData')));
 
 /* -------------------------------------------------------------------------- */
 /*                           ROUTES ORIGIN                                    */

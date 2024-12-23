@@ -11,11 +11,16 @@ import fs from 'fs';
 import path from 'path';
 import archiver from 'archiver';
 import multer from 'multer';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const pattern = /(\.\.\/)/g;
 
-const contentRootPath = "uploads/"
+const contentRootPath = path.join(__dirname, '..', '..', process.env.BASE_DIR);
 const router = express.Router();
+
 var Permission = {
     Allow: "allow",
     Deny: "deny"
@@ -851,6 +856,14 @@ router.post('/Download', function (req, res) {
  * Handles the read request
  */
 router.post('/', function (req, res) {
+
+    if (!fs.existsSync(contentRootPath)) {
+        fs.mkdirSync(contentRootPath, { recursive: true });
+        console.log(`${contentRootPath} created successfully.`);
+    } else {
+    }
+
+
     replaceRequestParams(req, res);
     req.setTimeout(0);
     function getRules() {
@@ -1010,6 +1023,7 @@ router.post('/', function (req, res) {
     }
 
     function ReadDirectories(file) {
+        var dir = []
         var cwd = {};
         var directoryList = [];
         function stats(file) {
