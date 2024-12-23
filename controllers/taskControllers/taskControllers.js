@@ -12,11 +12,11 @@ const __dirname = path.dirname(__filename);
 const rootFolder = path.join(__dirname, '..', '..', process.env.BASE_DIR);
 
 const assigningTask = async (req, res) => {
-    const { userId, subjectSchemaRelationId, folderPath, status } = req.body;
+    const { userId, subjectSchemaRelationId, folderPath, status, taskName } = req.body;
 
     try {
         // Validate inputs
-        if (!userId || !subjectSchemaRelationId || !folderPath) {
+        if (!userId || !subjectSchemaRelationId || !folderPath || !taskName) {
             return res.status(400).json({ message: "All fields are required" });
         }
 
@@ -84,6 +84,7 @@ const assigningTask = async (req, res) => {
             folderPath,
             totalFiles,
             status,
+            taskName
         });
         const savedTask = await newTask.save();
 
@@ -96,10 +97,10 @@ const assigningTask = async (req, res) => {
 };
 
 const updateAssignedTask = async (req, res) => {
-    const { userId, subjectSchemaRelationId, folderPath, status } = req.body;
+    const { userId, subjectSchemaRelationId, folderPath, status, taskName } = req.body;
     try {
 
-        if (!userId || !subjectSchemaRelationId || !folderPath) {
+        if (!userId || !subjectSchemaRelationId || !folderPath || !taskName) {
             return res.status(400).json({ message: "All fields are required" });
         }
 
@@ -124,7 +125,7 @@ const updateAssignedTask = async (req, res) => {
 
         const updatedTask = await Task.findOneAndUpdate(
             { userId, subjectSchemaRelationId },
-            { folderPath, totalFiles, status },
+            { folderPath, totalFiles, status, taskName },
             { new: true }
         );
 
