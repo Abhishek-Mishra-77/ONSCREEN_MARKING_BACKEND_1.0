@@ -4,7 +4,8 @@ import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
 import fileUpload from 'express-fileupload';
-
+import swaggerUi from 'swagger-ui-express';
+import swaggerSpecs from "./services/swagger.js";
 
 
 import database from "./utils/database.js";
@@ -37,6 +38,9 @@ const PORT = process.env.PORT || 5000;
 app.use(fileUpload());
 app.use(express.json());
 app.use(cors());
+
+// Serve Swagger docs
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
 
 app.use('/uploadedPdfs', express.static(path.join(__dirname, 'uploadedPdfs')));
 app.use('/scannedData', express.static(path.join(__dirname, 'scannedData')));

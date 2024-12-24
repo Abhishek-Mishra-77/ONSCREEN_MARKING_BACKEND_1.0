@@ -1,0 +1,32 @@
+import swaggerJsdoc from 'swagger-jsdoc';
+
+const options = {
+    definition: {
+        openapi: '3.0.0',
+        info: {
+            title: 'Project API Documentation',
+            version: '1.0.0',
+            description: 'API documentation for all backend endpoints.',
+        },
+        servers: [
+            {
+                url: 'http://192.168.1.43:8000',
+                description: 'Development server',
+            },
+        ],
+    },
+    apis: [
+        './routes/authRoutes/*.js',
+        './routes/classRoutes/*.js',
+        './routes/subjectRoutes/*.js',
+        './routes/schemeRoutes/*.js',
+        './routes/subjectSchemaRelationRoutes/*.js',
+        './routes/taskRoutes/*.js',
+    ],
+};
+
+const swaggerDocs = swaggerJsdoc(options);
+
+console.log('Detected Paths:', swaggerDocs.paths);
+
+export default swaggerDocs;
