@@ -57,7 +57,7 @@ app.use("/api/schemas", questionDefinitionRoutes);
 app.use("/api/subjects/relations", subjectQuestionRelationRoutes);
 app.use("/api/coordinates", coordinateAllocation);
 app.use("/api/tasks", taskRoutes);
-app.use(syncfusionController)
+app.use("/api/syncfusion", syncfusionController)
 
 
 /* -------------------------------------------------------------------------- */
