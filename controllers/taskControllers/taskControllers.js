@@ -8,7 +8,9 @@ import AnswerPdf from "../../models/taskModels/studentAnswerPdf.js";
 import Schema from "../../models/schemeModel/schema.js";
 import QuestionDefinition from "../../models/schemeModel/questionDefinitionSchema.js";
 import { fileURLToPath } from 'url';
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
+import { PDFDocument } from 'pdf-lib';
+
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -38,24 +40,22 @@ const assigningTask = async (req, res) => {
             return res.status(400).json({ message: "Invalid subjectSchemaRelationId." });
         }
 
-
-
         // Check if user exists
         const user = await User.findById(userId);
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
 
+        const isExistTask = await Task.findOne({ userId });
+        if (isExistTask) {
+            return res.status(400).json({ message: "Task already exist" });
+        }
+
+
         // Check if subject schema relation exists
         const subjectSchemaRelationDetails = await SubjectSchemaRelation.findById(subjectSchemaRelationId);
         if (!subjectSchemaRelationDetails) {
             return res.status(404).json({ message: "SubjectSchemaRelation not found" });
-        }
-
-        // Check if task already assigned to this user
-        const existingTask = await Task.findOne({ subjectSchemaRelationId });
-        if (existingTask) {
-            return res.status(400).json({ message: "Task already assigned to this subject relation" });
         }
 
         // Resolve and validate folder path
@@ -94,24 +94,54 @@ const assigningTask = async (req, res) => {
             subjectCode,
             currentFileIndex: 1
         });
+
         const savedTask = await newTask.save({ session });
 
-        // Save each PDF filename to the AnswerPdf table
+        // Array to hold metadata for the PDF files
+        const pdfMetadata = [];
+
+        // Loop through each PDF file to extract metadata and save AnswerPdf documents
         for (const fileName of pdfFileNames) {
-            const answerPdf = new AnswerPdf({
-                taskId: savedTask._id,
-                answerPdfName: fileName
-            });
-            await answerPdf.save({ session });
+            const pdfPath = path.join(absoluteFolderPath, fileName);
+
+            try {
+                // Load the PDF to get metadata (like number of pages)
+                const pdfBytes = await fs.promises.readFile(pdfPath);
+                const pdfDoc = await PDFDocument.load(pdfBytes);
+
+                // Get the number of pages (for simplicity, we assume images per page)
+                const numberOfPages = pdfDoc.getPages().length;
+
+                // Estimate total images based on pages (customize this logic based on your assumption)
+                const totalImages = numberOfPages * 2; // Assume 2 images per page for example
+
+                // Save the metadata into the AnswerPdf collection
+                const answerPdf = new AnswerPdf({
+                    taskId: savedTask._id,
+                    totalImages: totalImages,
+                    answerPdfName: fileName
+                });
+
+                // Save the AnswerPdf document to the database with session to ensure transactionality
+                await answerPdf.save({ session });
+
+                // Add metadata to response array
+                pdfMetadata.push({
+                    pdfName: fileName,
+                    totalImages: totalImages
+                });
+
+            } catch (error) {
+                console.error(`Error processing PDF: ${fileName}`, error);
+            }
         }
 
         // Commit the transaction
         await session.commitTransaction();
 
-        // Respond with success
+        // Respond with the PDF names and image metadata
         res.status(200).json({ message: "Task assigned successfully" });
     } catch (error) {
-        // Abort the transaction on error
         await session.abortTransaction();
         console.error("Error assigning task:", error);
         res.status(500).json({ message: "Failed to assign task", error: error.message });
@@ -121,10 +151,16 @@ const assigningTask = async (req, res) => {
     }
 };
 
+
 const updateAssignedTask = async (req, res) => {
     const { userId, subjectSchemaRelationId, folderPath, status, taskName, className, subjectCode } = req.body;
+    const { id } = req.params;
+    // Start a session
+    const session = await mongoose.startSession();
 
     try {
+        session.startTransaction();
+
         // Validate inputs
         if (!userId || !subjectSchemaRelationId || !folderPath || !taskName || !className || !subjectCode) {
             return res.status(400).json({ message: "All fields are required" });
@@ -138,6 +174,16 @@ const updateAssignedTask = async (req, res) => {
             return res.status(400).json({ message: "Invalid subjectSchemaRelationId." });
         }
 
+        if (!isValidObjectId(id)) {
+            return res.status(400).json({ message: "Invalid task ID." });
+        }
+
+        // Check if task exists
+        const existingTask = await Task.findById(id);
+        if (!existingTask) {
+            return res.status(404).json({ message: "Task not found" });
+        }
+
         // Check if user exists
         const user = await User.findById(userId);
         if (!user) {
@@ -145,7 +191,7 @@ const updateAssignedTask = async (req, res) => {
         }
 
         // Check if subject schema relation exists
-        const subjectSchemaRelationDetails = await subjectSchemaRelation.findById(subjectSchemaRelationId);
+        const subjectSchemaRelationDetails = await SubjectSchemaRelation.findById(subjectSchemaRelationId);
         if (!subjectSchemaRelationDetails) {
             return res.status(404).json({ message: "SubjectSchemaRelation not found" });
         }
@@ -159,61 +205,88 @@ const updateAssignedTask = async (req, res) => {
             return res.status(400).json({ message: "Folder does not exist or is inaccessible." });
         }
 
-        // Read folder contents and filter for PDF files
+        // Asynchronously read the folder and get PDF filenames
         let pdfFileNames = [];
         try {
             const files = await fs.promises.readdir(absoluteFolderPath);
-            pdfFileNames = files.filter(file => path.extname(file).toLowerCase() === '.pdf');
+            const pdfFiles = files.filter(file => path.extname(file).toLowerCase() === '.pdf');
+            pdfFileNames = pdfFiles;
         } catch (error) {
             console.error("Error reading folder contents:", error);
             return res.status(400).json({ message: "Unable to read folder contents." });
         }
 
-        // Ensure there are PDF files in the folder
         if (pdfFileNames.length === 0) {
             return res.status(400).json({ message: "No PDF files found in the folder." });
         }
 
-        // Update the task
-        const updatedTask = await Task.findOneAndUpdate(
-            { userId, subjectSchemaRelationId },
-            {
-                folderPath,
-                totalFiles: pdfFileNames.length,
-                status,
-                taskName,
-                className,
-                subjectCode
-            },
-            { new: true }
-        );
+        // Update the existing task
+        existingTask.status = status || existingTask.status;
+        existingTask.taskName = taskName || existingTask.taskName;
+        existingTask.className = className || existingTask.className;
+        existingTask.subjectCode = subjectCode || existingTask.subjectCode;
+        existingTask.folderPath = folderPath || existingTask.folderPath;
 
-        if (!updatedTask) {
-            return res.status(404).json({ message: "Task not found" });
-        }
+        // Save the updated task with the session
+        await existingTask.save({ session });
 
-        // Overwrite the AnswerPdf entries for this task
-        await AnswerPdf.deleteMany({ taskId: updatedTask._id });
+        // Remove existing AnswerPdf documents for this task (optional, if you want to update all documents)
+        await AnswerPdf.deleteMany({ taskId: existingTask._id }, { session });
+
+        // Array to hold metadata for the PDF files
+        const pdfMetadata = [];
+
+        // Loop through each PDF file to extract metadata and save AnswerPdf documents
         for (const fileName of pdfFileNames) {
-            const answerPdf = new AnswerPdf({
-                taskId: updatedTask._id,
-                answerPdfName: fileName
-            });
-            await answerPdf.save();
+            const pdfPath = path.join(absoluteFolderPath, fileName);
+
+            try {
+                // Load the PDF to get metadata (like number of pages)
+                const pdfBytes = await fs.promises.readFile(pdfPath);
+                const pdfDoc = await PDFDocument.load(pdfBytes);
+
+                // Get the number of pages (for simplicity, we assume images per page)
+                const numberOfPages = pdfDoc.getPages().length;
+
+                // Estimate total images based on pages (customize this logic based on your assumption)
+                const totalImages = numberOfPages * 2; // Assume 2 images per page for example
+
+                // Save the metadata into the AnswerPdf collection
+                const answerPdf = new AnswerPdf({
+                    taskId: existingTask._id,
+                    totalImages: totalImages,
+                    answerPdfName: fileName
+                });
+
+                // Save the AnswerPdf document to the database with session to ensure transactionality
+                await answerPdf.save({ session });
+
+                // Add metadata to response array
+                pdfMetadata.push({
+                    pdfName: fileName,
+                    totalImages: totalImages
+                });
+
+            } catch (error) {
+                console.error(`Error processing PDF: ${fileName}`, error);
+            }
         }
 
-        // Respond with the updated task and new PDF filenames
-        res.status(200).json({
-            message: "Task and associated PDFs updated successfully",
-            task: updatedTask,
-            pdfFiles: pdfFileNames
-        });
+        // Commit the transaction
+        await session.commitTransaction();
+
+        // Respond with the updated PDF names and image metadata
+        res.status(200).json({ message: "Task updated successfully" });
     } catch (error) {
+        // Abort the transaction on error
+        await session.abortTransaction();
         console.error("Error updating task:", error);
         res.status(500).json({ message: "Failed to update task", error: error.message });
+    } finally {
+        // End the session
+        session.endSession();
     }
 };
-
 
 const removeAssignedTask = async (req, res) => {
     const { id } = req.params;

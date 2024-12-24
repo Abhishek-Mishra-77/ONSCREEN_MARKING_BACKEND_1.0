@@ -6,6 +6,10 @@ const studentAnswerPdf = new mongoose.Schema({
         ref: "Task",
         required: true
     },
+    totalImages: {
+        type: Number,
+        required: true
+    },
     answerPdfName: {
         type: String,
         required: true
