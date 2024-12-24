@@ -38,12 +38,18 @@ import authMiddleware from "../../Middlewares/authMiddleware.js";
  *             type: object
  *             required:
  *               - userId
+ *               - className
+ *               - subjectCode
  *               - subjectSchemaRelationId
  *               - folderPath
  *               - status
  *               - taskName
  *             properties:
  *               userId:
+ *                 type: string
+ *               className :
+ *                 type: string
+ *               subjectCode:
  *                 type: string
  *               subjectSchemaRelationId:
  *                 type: string
@@ -99,12 +105,18 @@ router.post("/create/task", assigningTask);
  *             type: object
  *             required:
  *               - userId
+ *               - className  
+ *               - subjectCode
  *               - subjectSchemaRelationId
  *               - folderPath
  *               - status
  *               - taskName
  *             properties:
  *               userId:
+ *                 type: string
+ *               className :
+ *                 type: string
+ *               subjectCode:
  *                 type: string
  *               subjectSchemaRelationId:
  *                 type: string
@@ -196,6 +208,8 @@ router.delete("/remove/task/:id", removeAssignedTask);
  *         description: Internal server error
  */
 router.get("/get/task/:id", getAssignTaskById);
+
+
 
 /**
  * @swagger

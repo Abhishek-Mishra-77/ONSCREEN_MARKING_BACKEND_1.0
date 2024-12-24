@@ -1,5 +1,6 @@
 import swaggerJsdoc from 'swagger-jsdoc';
 
+
 const options = {
     definition: {
         openapi: '3.0.0',
@@ -10,7 +11,7 @@ const options = {
         },
         servers: [
             {
-                url: 'http://192.168.1.43:8000',
+                url: `http://localhost:8000`,
                 description: 'Development server',
             },
         ],

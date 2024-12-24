@@ -28,6 +28,9 @@ import syncfusionController from "./controllers/syncfusionController/sycnfusionC
 
 // For handling file uploads
 
+console.log(process.env.SERVER_URL)
+
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

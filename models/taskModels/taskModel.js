@@ -5,6 +5,14 @@ const taskSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    className: {
+        type: String,
+        required: true
+    },
+    subjectCode: {
+        type: String,
+        required: true
+    },
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
@@ -26,6 +34,10 @@ const taskSchema = new mongoose.Schema({
     status: {
         type: Boolean,
         required: true
+    },
+    currentFileIndex: {
+        type: Number,
+        default: 1
     }
 });
 

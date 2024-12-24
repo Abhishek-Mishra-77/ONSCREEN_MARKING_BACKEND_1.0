@@ -3,10 +3,13 @@ import path from "path";
 import Task from "../../models/taskModels/taskModel.js";
 import { isValidObjectId } from "../../services/mongoIdValidation.js";
 import User from "../../models/authModels/User.js";
-import subjectSchemaRelation from "../../models/subjectSchemaRelationModel/subjectSchemaRelationModel.js";
+import SubjectSchemaRelation from "../../models/subjectSchemaRelationModel/subjectSchemaRelationModel.js";
 import AnswerPdf from "../../models/taskModels/studentAnswerPdf.js";
+import Schema from "../../models/schemeModel/schema.js";
+import QuestionDefinition from "../../models/schemeModel/questionDefinitionSchema.js";
 import { fileURLToPath } from 'url';
 import mongoose from "mongoose";
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -14,7 +17,7 @@ const __dirname = path.dirname(__filename);
 const rootFolder = path.join(__dirname, '..', '..', process.env.BASE_DIR);
 
 const assigningTask = async (req, res) => {
-    const { userId, subjectSchemaRelationId, folderPath, status, taskName } = req.body;
+    const { userId, subjectSchemaRelationId, folderPath, status, taskName, className, subjectCode } = req.body;
 
     // Start a session
     const session = await mongoose.startSession();
@@ -23,7 +26,7 @@ const assigningTask = async (req, res) => {
         session.startTransaction();
 
         // Validate inputs
-        if (!userId || !subjectSchemaRelationId || !folderPath || !taskName) {
+        if (!userId || !subjectSchemaRelationId || !folderPath || !taskName || !className || !subjectCode) {
             return res.status(400).json({ message: "All fields are required" });
         }
 
@@ -35,6 +38,8 @@ const assigningTask = async (req, res) => {
             return res.status(400).json({ message: "Invalid subjectSchemaRelationId." });
         }
 
+
+
         // Check if user exists
         const user = await User.findById(userId);
         if (!user) {
@@ -42,7 +47,7 @@ const assigningTask = async (req, res) => {
         }
 
         // Check if subject schema relation exists
-        const subjectSchemaRelationDetails = await subjectSchemaRelation.findById(subjectSchemaRelationId);
+        const subjectSchemaRelationDetails = await SubjectSchemaRelation.findById(subjectSchemaRelationId);
         if (!subjectSchemaRelationDetails) {
             return res.status(404).json({ message: "SubjectSchemaRelation not found" });
         }
@@ -84,7 +89,10 @@ const assigningTask = async (req, res) => {
             folderPath,
             totalFiles: pdfFileNames.length,
             status,
-            taskName
+            taskName,
+            className,
+            subjectCode,
+            currentFileIndex: 1
         });
         const savedTask = await newTask.save({ session });
 
@@ -101,7 +109,7 @@ const assigningTask = async (req, res) => {
         await session.commitTransaction();
 
         // Respond with success
-        res.status(200).json({ message: "Task assigned successfully", task: savedTask, pdfFiles: pdfFileNames });
+        res.status(200).json({ message: "Task assigned successfully" });
     } catch (error) {
         // Abort the transaction on error
         await session.abortTransaction();
@@ -114,11 +122,11 @@ const assigningTask = async (req, res) => {
 };
 
 const updateAssignedTask = async (req, res) => {
-    const { userId, subjectSchemaRelationId, folderPath, status, taskName } = req.body;
+    const { userId, subjectSchemaRelationId, folderPath, status, taskName, className, subjectCode } = req.body;
 
     try {
         // Validate inputs
-        if (!userId || !subjectSchemaRelationId || !folderPath || !taskName) {
+        if (!userId || !subjectSchemaRelationId || !folderPath || !taskName || !className || !subjectCode) {
             return res.status(400).json({ message: "All fields are required" });
         }
 
@@ -173,7 +181,9 @@ const updateAssignedTask = async (req, res) => {
                 folderPath,
                 totalFiles: pdfFileNames.length,
                 status,
-                taskName
+                taskName,
+                className,
+                subjectCode
             },
             { new: true }
         );
@@ -251,7 +261,7 @@ const removeAssignedTask = async (req, res) => {
 
 const getAssignTaskById = async (req, res) => {
     const { id } = req.params;
-    console.log(id);
+
     try {
 
         if (!isValidObjectId(id)) {
@@ -259,7 +269,36 @@ const getAssignTaskById = async (req, res) => {
         }
 
         const task = await Task.findById(id);
-        res.status(200).json(task);
+
+        if (!task) {
+            return res.status(404).json({ message: "Task not found" });
+        }
+
+        const subjectSchemaRelationDetails = await SubjectSchemaRelation.findById(task.subjectSchemaRelationId);
+
+        if (!subjectSchemaRelationDetails) {
+            return res.status(404).json({ message: "SubjectSchemaRelation not found" });
+        }
+
+        const schemaDetails = await Schema.findById(subjectSchemaRelationDetails.schemaId);
+
+        if (!schemaDetails) {
+            return res.status(404).json({ message: "Schema not found" });
+        }
+
+        const questionDefinitions = await QuestionDefinition.find({ schemaId: schemaDetails._id, parentQuestionId: null });
+
+        if (!questionDefinitions) {
+            return res.status(404).json({ message: "QuestionDefinitions not found" });
+        }
+
+        const taskDetails = {
+            task: task,
+            schemaDetails: schemaDetails,
+            questionDefinitions: questionDefinitions
+        }
+
+        res.status(200).json({ taskDetails });
     } catch (error) {
         console.error("Error fetching task:", error);
         res.status(500).json({ message: "Failed to fetch task", error: error.message });

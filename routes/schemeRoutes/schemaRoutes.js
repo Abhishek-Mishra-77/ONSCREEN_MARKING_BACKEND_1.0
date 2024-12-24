@@ -157,7 +157,7 @@ router.get("/get/schema/:id", authMiddleware, getSchemaById);
  *       500:
  *         description: Internal server error.
  */
-router.get("/getall/schema", authMiddleware, getAllSchemas);
+router.get("/getall/schema", getAllSchemas);
 
 /**
  * @swagger
