@@ -10,6 +10,7 @@ import QuestionDefinition from "../../models/schemeModel/questionDefinitionSchem
 import { fileURLToPath } from 'url';
 import mongoose from 'mongoose';
 import { PDFDocument } from 'pdf-lib';
+import extractImagesFromPdf from "./extractImagesFromPDF.js";
 
 
 
@@ -113,12 +114,11 @@ const assigningTask = async (req, res) => {
                 const numberOfPages = pdfDoc.getPages().length;
 
                 // Estimate total images based on pages (customize this logic based on your assumption)
-                const totalImages = numberOfPages * 2; // Assume 2 images per page for example
 
                 // Save the metadata into the AnswerPdf collection
                 const answerPdf = new AnswerPdf({
                     taskId: savedTask._id,
-                    totalImages: totalImages,
+                    totalImages: numberOfPages,
                     answerPdfName: fileName
                 });
 
@@ -128,7 +128,7 @@ const assigningTask = async (req, res) => {
                 // Add metadata to response array
                 pdfMetadata.push({
                     pdfName: fileName,
-                    totalImages: totalImages
+                    totalImages: numberOfPages
                 });
 
             } catch (error) {
@@ -153,7 +153,7 @@ const assigningTask = async (req, res) => {
 
 
 const updateAssignedTask = async (req, res) => {
-    const { userId, subjectSchemaRelationId, folderPath, status, taskName, className, subjectCode } = req.body;
+    const { userId, subjectSchemaRelationId, folderPath, status, taskName, className, subjectCode, currentFileIndex } = req.body;
     const { id } = req.params;
     // Start a session
     const session = await mongoose.startSession();
@@ -162,7 +162,7 @@ const updateAssignedTask = async (req, res) => {
         session.startTransaction();
 
         // Validate inputs
-        if (!userId || !subjectSchemaRelationId || !folderPath || !taskName || !className || !subjectCode) {
+        if (!userId || !subjectSchemaRelationId || !folderPath || !taskName || !className || !subjectCode || !currentFileIndex) {
             return res.status(400).json({ message: "All fields are required" });
         }
 
@@ -226,6 +226,7 @@ const updateAssignedTask = async (req, res) => {
         existingTask.className = className || existingTask.className;
         existingTask.subjectCode = subjectCode || existingTask.subjectCode;
         existingTask.folderPath = folderPath || existingTask.folderPath;
+        existingTask.currentFileIndex = currentFileIndex || existingTask.currentFileIndex;
 
         // Save the updated task with the session
         await existingTask.save({ session });
@@ -331,12 +332,10 @@ const removeAssignedTask = async (req, res) => {
     }
 };
 
-
 const getAssignTaskById = async (req, res) => {
     const { id } = req.params;
 
     try {
-
         if (!isValidObjectId(id)) {
             return res.status(400).json({ message: "Invalid task ID." });
         }
@@ -347,35 +346,87 @@ const getAssignTaskById = async (req, res) => {
             return res.status(404).json({ message: "Task not found" });
         }
 
+        // Retrieve related details
         const subjectSchemaRelationDetails = await SubjectSchemaRelation.findById(task.subjectSchemaRelationId);
-
         if (!subjectSchemaRelationDetails) {
             return res.status(404).json({ message: "SubjectSchemaRelation not found" });
         }
 
         const schemaDetails = await Schema.findById(subjectSchemaRelationDetails.schemaId);
-
         if (!schemaDetails) {
             return res.status(404).json({ message: "Schema not found" });
         }
 
         const questionDefinitions = await QuestionDefinition.find({ schemaId: schemaDetails._id, parentQuestionId: null });
-
         if (!questionDefinitions) {
             return res.status(404).json({ message: "QuestionDefinitions not found" });
         }
 
+        const { folderPath, currentFileIndex, totalFiles } = task;
 
-        const taskDetails = {
-            task: task,
-            schemaDetails: schemaDetails,
-            questionDefinitions: questionDefinitions
+        // Validate currentFileIndex
+        if (currentFileIndex < 1 || currentFileIndex > totalFiles) {
+            return res.status(400).json({ message: "Invalid current file index." });
         }
 
-        res.status(200).json({ taskDetails });
+        const pdfFolderPath = path.resolve(folderPath);
+        const pdfFiles = fs.readdirSync(pdfFolderPath).filter(file => file.endsWith(".pdf"));
+
+        // Ensure currentFileIndex is within the range of available PDFs
+        if (currentFileIndex > pdfFiles.length) {
+            return res.status(404).json({ message: "PDF file not found for the current index." });
+        }
+
+        const currentPdf = pdfFiles[currentFileIndex - 1];
+        const extractedFolderPath = path.join(pdfFolderPath, "extractedPdfImages");
+        const extractedPdfFolder = path.join(extractedFolderPath, path.basename(currentPdf, ".pdf"));
+
+
+        // If extracted folder doesn't exist, create it and extract images from the PDF
+        if (!fs.existsSync(extractedPdfFolder)) {
+            fs.mkdirSync(extractedPdfFolder, { recursive: true });
+            const pdfPath = path.join(pdfFolderPath, currentPdf);
+            const totalImages = await extractImagesFromPdf(pdfPath, extractedPdfFolder);
+
+            // Save the extraction details in the AnswerPdf model
+            const existingAnswerPdf = await AnswerPdf.findOne({ taskId: task._id, answerPdfName: currentPdf });
+            if (!existingAnswerPdf) {
+                await AnswerPdf.create({
+                    taskId: task._id,
+                    totalImages,
+                    answerPdfName: currentPdf,
+                });
+            }
+        }
+
+        // Dynamically generate the path to the extracted images folder based on task.folderPath
+        const extractedImagesFolder = path.join(task.folderPath, "extractedPdfImages", path.basename(currentPdf, ".pdf"));
+
+        // Retrieve the current AnswerPdf details
+        const answerPdfDetails = await AnswerPdf.findOne({ taskId: task._id, answerPdfName: currentPdf });
+
+
+        // Respond with the updated task details and folder path
+        res.status(200).json({
+            task,
+            extractedImagesFolder: extractedImagesFolder,
+            answerPdfDetails,
+            schemaDetails,
+            questionDefinitions,
+        });
     } catch (error) {
         console.error("Error fetching task:", error);
-        res.status(500).json({ message: "Failed to fetch task", error: error.message });
+        res.status(500).json({ message: "Failed to process task", error: error.message });
+    }
+};
+
+const getAllTaskHandler = async (req, res) => {
+    try {
+        const tasks = await Task.find();
+        res.status(200).json(tasks);
+    } catch (error) {
+        console.error("Error fetching tasks:", error);
+        res.status(500).json({ message: "Failed to fetch tasks", error: error.message });
     }
 };
 
@@ -393,11 +444,46 @@ const getAllAssignedTaskByUserId = async (req, res) => {
     }
 }
 
+const updateCurrentIndex = async (req, res) => {
+    const { id } = req.params;
+    const { currentIndex } = req.body;
+
+    try {
+        if (!isValidObjectId(id)) {
+            return res.status(400).json({ message: "Invalid task ID." });
+        }
+
+        const task = await Task.findById(id);
+        if (!task) {
+            return res.status(404).json({ message: "Task not found" });
+        }
+
+        console.log(task)
+
+        // Ensure currentIndex is a valid number and within the range of totalFiles
+        if (currentIndex < 1 || currentIndex > task.totalFiles) {
+            return res.status(400).json({ message: `currentIndex should be between 1 and ${task.totalFiles}` });
+        }
+
+        // Update currentFileIndex
+        task.currentFileIndex = currentIndex;
+        await task.save();
+
+        res.status(200).json(task);
+    } catch (error) {
+        console.error("Error updating task:", error);
+        res.status(500).json({ message: "Failed to update task", error: error.message });
+    }
+};
+
+
 export {
     assigningTask,
     updateAssignedTask,
     removeAssignedTask,
     getAssignTaskById,
-    getAllAssignedTaskByUserId
+    getAllAssignedTaskByUserId,
+    getAllTaskHandler,
+    updateCurrentIndex
 };
 

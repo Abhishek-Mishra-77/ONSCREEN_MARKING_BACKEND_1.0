@@ -27,6 +27,7 @@
     "nodemon": "^3.1.4",
     "pdf-lib": "^1.17.1",
     "pdf-poppler": "^0.2.1",
+    "pdfjs-dist": "^4.9.155",
     "rimraf": "^6.0.1",
     "sharp": "^0.33.5",
     "swagger-jsdoc": "^6.2.8",

@@ -63,59 +63,6 @@ import authMiddleware from "../../Middlewares/authMiddleware.js";
  */
 router.post('/createsubjectschemarel', authMiddleware, uploadMiddleware, createSubjectSchemaRelation);
 
-/**
- * @swagger
- * /api/subjects/relations/getsubjectbyid/{id}:
- *   get:
- *     summary: Get subject schema relation by ID
- *     tags: [Subject Schema Relation]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - name: id
- *         in: path
- *         required: true
- *         description: The ID of the subject schema relation to retrieve.
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Subject schema relation retrieved successfully.
- *       404:
- *         description: Subject schema relation not found.
- *       400:
- *         description: Invalid ID format.
- *       500:
- *         description: Internal server error.
- */
-router.get('/getsubjectbyid/:id', getSubjectSchemaRelationById);
-
-/**
- * @swagger
- * /api/subjects/relations/deletesubjectbyid/{id}:
- *   delete:
- *     summary: Delete subject schema relation by ID
- *     tags: [Subject Schema Relation]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - name: id
- *         in: path
- *         required: true
- *         description: The ID of the subject schema relation to delete.
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Subject schema relation deleted successfully.
- *       404:
- *         description: Subject schema relation not found.
- *       400:
- *         description: Invalid ID format.
- *       500:
- *         description: Internal server error.
- */
-router.delete('/deletesubjectbyid/:id', authMiddleware, deleteSubjectSchemaRelationById);
 
 /**
  * @swagger
@@ -169,6 +116,64 @@ router.delete('/deletesubjectbyid/:id', authMiddleware, deleteSubjectSchemaRelat
  *         description: Internal server error.
  */
 router.put('/updatesubjectbyid/:id', authMiddleware, uploadMiddleware, updateSubjectSchemaRelation);
+
+
+/**
+ * @swagger
+ * /api/subjects/relations/deletesubjectbyid/{id}:
+ *   delete:
+ *     summary: Delete subject schema relation by ID
+ *     tags: [Subject Schema Relation]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         description: The ID of the subject schema relation to delete.
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Subject schema relation deleted successfully.
+ *       404:
+ *         description: Subject schema relation not found.
+ *       400:
+ *         description: Invalid ID format.
+ *       500:
+ *         description: Internal server error.
+ */
+router.delete('/deletesubjectbyid/:id', authMiddleware, deleteSubjectSchemaRelationById);
+
+
+
+/**
+ * @swagger
+ * /api/subjects/relations/getsubjectbyid/{id}:
+ *   get:
+ *     summary: Get subject schema relation by ID
+ *     tags: [Subject Schema Relation]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         description: The ID of the subject schema relation to retrieve.
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Subject schema relation retrieved successfully.
+ *       404:
+ *         description: Subject schema relation not found.
+ *       400:
+ *         description: Invalid ID format.
+ *       500:
+ *         description: Internal server error.
+ */
+router.get('/getsubjectbyid/:id', getSubjectSchemaRelationById);
+
 
 /**
  * @swagger

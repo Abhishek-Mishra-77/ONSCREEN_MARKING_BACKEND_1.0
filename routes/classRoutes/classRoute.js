@@ -163,6 +163,34 @@ router.post("/create/class", createCourse);
  */
 router.put("/update/classes/:id", authMiddleware, updateCourse);
 
+
+/**
+ * @swagger
+ * /api/classes/remove/class/{id}:
+ *   delete:
+ *     summary: Remove a class by ID
+ *     tags: [Classes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         description: ID of the class to be removed
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Course removed successfully
+ *       400:
+ *         description: Invalid ID
+ *       404:
+ *         description: Class not found
+ *       500:
+ *         description: Internal server error
+ */
+router.delete("/remove/class/:id", authMiddleware, removeCourse);
+
 /**
  * @swagger
  * /api/classes/get/class:
@@ -234,31 +262,5 @@ router.get("/get/class", authMiddleware, getAllCourses);
  */
 router.get("/getbyid/class/:id", authMiddleware, getCourseById);
 
-/**
- * @swagger
- * /api/classes/remove/class/{id}:
- *   delete:
- *     summary: Remove a class by ID
- *     tags: [Classes]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - name: id
- *         in: path
- *         required: true
- *         description: ID of the class to be removed
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Course removed successfully
- *       400:
- *         description: Invalid ID
- *       404:
- *         description: Class not found
- *       500:
- *         description: Internal server error
- */
-router.delete("/remove/class/:id", authMiddleware, removeCourse);
 
 export default router;

@@ -119,6 +119,35 @@ router.post('/signin', userLogin);
  */
 router.post('/verify', verifyOtp);
 
+
+/**
+ * @swagger
+ * /api/auth/createuserbycsv:
+ *   post:
+ *     summary: Bulk create users using a CSV file
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: All users created successfully
+ *       400:
+ *         description: Invalid CSV file or missing data
+ *       500:
+ *         description: Failed to create users
+ */
+router.post('/createuserbycsv', authMiddleware, createUsersByCsvFile);
+
 /**
  * @swagger
  * /api/auth/forgotpassword:
@@ -145,6 +174,67 @@ router.post('/verify', verifyOtp);
  *         description: Internal server error
  */
 router.put('/forgotpassword', forgotPassword);
+
+/**
+ * @swagger
+ * /api/auth/update/{id}:
+ *   put:
+ *     summary: Update user details
+ *     tags: [Authentication]
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *               mobile:
+ *                 type: string
+ *               role:
+ *                 type: string
+ *               permissions:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *     responses:
+ *       200:
+ *         description: User updated successfully
+ *       404:
+ *         description: User not found
+ */
+router.put('/update/:id', authMiddleware, updateUserDetails);
+
+
+/**
+ * @swagger
+ * /api/auth/removeUser/{id}:
+ *   delete:
+ *     summary: Remove a user
+ *     tags: [Authentication]
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User removed successfully
+ *       404:
+ *         description: User not found
+ */
+router.delete('/removeUser/:id', authMiddleware, removeUser);
+
 
 /**
  * @swagger
@@ -191,91 +281,9 @@ router.get('/:id', authMiddleware, getUserById);
  */
 router.get('/', authMiddleware, getAllUsers);
 
-/**
- * @swagger
- * /api/auth/removeUser/{id}:
- *   delete:
- *     summary: Remove a user
- *     tags: [Authentication]
- *     parameters:
- *       - name: id
- *         in: path
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: User removed successfully
- *       404:
- *         description: User not found
- */
-router.delete('/removeUser/:id', authMiddleware, removeUser);
 
-/**
- * @swagger
- * /api/auth/update/{id}:
- *   put:
- *     summary: Update user details
- *     tags: [Authentication]
- *     parameters:
- *       - name: id
- *         in: path
- *         required: true
- *         schema:
- *           type: string
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               name:
- *                 type: string
- *               email:
- *                 type: string
- *               mobile:
- *                 type: string
- *               role:
- *                 type: string
- *               permissions:
- *                 type: array
- *                 items:
- *                   type: string
- *     responses:
- *       200:
- *         description: User updated successfully
- *       404:
- *         description: User not found
- */
-router.put('/update/:id', authMiddleware, updateUserDetails);
 
-/**
- * @swagger
- * /api/auth/createuserbycsv:
- *   post:
- *     summary: Bulk create users using a CSV file
- *     tags: [Authentication]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         multipart/form-data:
- *           schema:
- *             type: object
- *             properties:
- *               file:
- *                 type: string
- *                 format: binary
- *     responses:
- *       200:
- *         description: All users created successfully
- *       400:
- *         description: Invalid CSV file or missing data
- *       500:
- *         description: Failed to create users
- */
-router.post('/createuserbycsv', authMiddleware, createUsersByCsvFile);
+
+
 
 export default router;

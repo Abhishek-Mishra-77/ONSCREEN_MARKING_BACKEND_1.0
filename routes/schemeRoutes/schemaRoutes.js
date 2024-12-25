@@ -118,6 +118,33 @@ router.put("/update/schema/:id", authMiddleware, updateSchema);
 
 /**
  * @swagger
+ * /api/schemas/remove/schema/{id}:
+ *   delete:
+ *     summary: Remove a schema by ID
+ *     description: This endpoint removes a schema by its ID along with associated question definitions.
+ *     tags: [Schemas]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: The ID of the schema to remove
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Schema and associated questions removed successfully.
+ *       404:
+ *         description: Schema not found.
+ *       500:
+ *         description: Internal server error.
+ */
+router.delete("/remove/schema/:id", authMiddleware, removeSchema);
+
+
+/**
+ * @swagger
  * /api/schemas/get/schema/{id}:
  *   get:
  *     summary: Get a schema by ID
@@ -176,30 +203,6 @@ router.get("/getall/schema", getAllSchemas);
  */
 router.get("/getall/completed/schema", authMiddleware, getAllCompletedSchema);
 
-/**
- * @swagger
- * /api/schemas/remove/schema/{id}:
- *   delete:
- *     summary: Remove a schema by ID
- *     description: This endpoint removes a schema by its ID along with associated question definitions.
- *     tags: [Schemas]
- *     security:
- *       - BearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         description: The ID of the schema to remove
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Schema and associated questions removed successfully.
- *       404:
- *         description: Schema not found.
- *       500:
- *         description: Internal server error.
- */
-router.delete("/remove/schema/:id", authMiddleware, removeSchema);
+
 
 export default router;

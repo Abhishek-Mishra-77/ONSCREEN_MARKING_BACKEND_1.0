@@ -6,7 +6,9 @@ import {
     updateAssignedTask,
     removeAssignedTask,
     getAssignTaskById,
-    getAllAssignedTaskByUserId
+    getAllAssignedTaskByUserId,
+    getAllTaskHandler,
+    updateCurrentIndex
 } from "../../controllers/taskControllers/taskControllers.js";
 
 import authMiddleware from "../../Middlewares/authMiddleware.js";
@@ -151,6 +153,59 @@ router.post("/create/task", assigningTask);
  */
 router.put("/update/task/:id", updateAssignedTask);
 
+
+/** 
+ *  @swagger
+ * /api/tasks/update/task/currentIndex/{id}:
+ *   put:
+ *     summary: Update the current index of a task
+ *     tags: [Tasks]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         description: ID of the task to update
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - currentIndex
+ *             properties:
+ *               currentIndex:
+ *                 type: number
+ *     responses:
+ *       200:
+ *         description: Current index updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 task:
+ *                   type: object
+ *                 pdfFiles:
+ *                   type: array    
+ *                   items:
+ *                     type: string
+ *       400:
+ *         description: Invalid task ID or input data
+ *       404:
+ *         description: Task not found
+ *       500:
+ *         description: Internal server error
+ * 
+ */
+
+
 /**
  * @swagger
  * /api/tasks/remove/task/{id}:
@@ -177,6 +232,48 @@ router.put("/update/task/:id", updateAssignedTask);
  *         description: Internal server error
  */
 router.delete("/remove/task/:id", removeAssignedTask);
+
+router.put("/update/task/currentIndex/:id", updateCurrentIndex);
+
+/**
+ *  @swagger
+ * /api/tasks/get/all/tasks:
+ *   get:
+ *     summary: Get all tasks
+ *     tags: [Tasks]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of tasks
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   _id:
+ *                     type: string
+ *                   userId:
+ *                     type: string
+ *                   className:
+ *                     type: string
+ *                   subjectCode:
+ *                     type: string
+ *                   subjectSchemaRelationId:
+ *                     type: string 
+ *                   folderPath:
+ *                     type: string
+ *                   status:
+ *                     type: string 
+ *                   taskName:
+ *                     type: string 
+ * 
+ */
+
+router.get('/get/all/tasks', getAllTaskHandler);
+
 
 /**
  * @swagger

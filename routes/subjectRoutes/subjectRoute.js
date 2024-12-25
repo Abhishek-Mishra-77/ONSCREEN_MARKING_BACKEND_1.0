@@ -75,6 +75,47 @@ import authMiddleware from "../../Middlewares/authMiddleware.js";
  */
 router.post("/create/subject", authMiddleware, createSubject);
 
+
+/**
+ * @swagger
+ * /api/subjects/update/subject/{id}:
+ *   put:
+ *     summary: Update an existing subject
+ *     description: This endpoint updates an existing subject by its ID.
+ *     tags: [Subjects]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: The ID of the subject to update
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               code:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Subject updated successfully.
+ *       400:
+ *         description: Missing required fields or invalid data.
+ *       404:
+ *         description: Subject not found.
+ *       500:
+ *         description: Internal server error.
+ */
+router.put("/update/subject/:id", authMiddleware, updateSubject);
+
+
 /**
  * @swagger
  * /api/subjects/remove/subject/{id}:
@@ -144,44 +185,6 @@ router.get("/getbyid/subject/:id", authMiddleware, getSubjectById);
  */
 router.get("/getall/subject", authMiddleware, getAllSubjects);
 
-/**
- * @swagger
- * /api/subjects/update/subject/{id}:
- *   put:
- *     summary: Update an existing subject
- *     description: This endpoint updates an existing subject by its ID.
- *     tags: [Subjects]
- *     security:
- *       - BearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         description: The ID of the subject to update
- *         schema:
- *           type: string
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               name:
- *                 type: string
- *               code:
- *                 type: string
- *     responses:
- *       200:
- *         description: Subject updated successfully.
- *       400:
- *         description: Missing required fields or invalid data.
- *       404:
- *         description: Subject not found.
- *       500:
- *         description: Internal server error.
- */
-router.put("/update/subject/:id", authMiddleware, updateSubject);
 
 /**
  * @swagger
