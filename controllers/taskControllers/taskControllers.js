@@ -13,11 +13,11 @@ import { PDFDocument } from 'pdf-lib';
 import extractImagesFromPdf from "./extractImagesFromPDF.js";
 
 
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const rootFolder = path.join(__dirname, '..', '..', process.env.BASE_DIR);
+
 
 const assigningTask = async (req, res) => {
     const { userId, subjectSchemaRelationId, folderPath, status, taskName, className, subjectCode } = req.body;
@@ -458,7 +458,6 @@ const updateCurrentIndex = async (req, res) => {
             return res.status(404).json({ message: "Task not found" });
         }
 
-        console.log(task)
 
         // Ensure currentIndex is a valid number and within the range of totalFiles
         if (currentIndex < 1 || currentIndex > task.totalFiles) {
