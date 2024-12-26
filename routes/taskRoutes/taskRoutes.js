@@ -308,7 +308,7 @@ router.get('/get/all/tasks', getAllTaskHandler);
  *       500:
  *         description: Internal server error
  */
-router.get("/get/task/:id", authMiddleware, getAssignTaskById);
+router.get("/get/task/:id", getAssignTaskById);
 
 
 
