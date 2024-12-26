@@ -82,7 +82,7 @@ import authMiddleware from "../../Middlewares/authMiddleware.js";
  *       500:
  *         description: Internal server error
  */
-router.post("/create/task", assigningTask);
+router.post("/create/task", authMiddleware, assigningTask);
 
 /**
  * @swagger
@@ -151,11 +151,14 @@ router.post("/create/task", assigningTask);
  *       500:
  *         description: Internal server error
  */
-router.put("/update/task/:id", updateAssignedTask);
+router.put("/update/task/:id", authMiddleware, updateAssignedTask);
 
 
-/** 
- *  @swagger
+
+
+
+/**
+ * @swagger
  * /api/tasks/update/task/currentIndex/{id}:
  *   put:
  *     summary: Update the current index of a task
@@ -197,13 +200,15 @@ router.put("/update/task/:id", updateAssignedTask);
  *                   items:
  *                     type: string
  *       400:
- *         description: Invalid task ID or input data
+ *         description: Invalid task ID or input data     
  *       404:
  *         description: Task not found
  *       500:
  *         description: Internal server error
  * 
  */
+
+router.put("/update/task/currentIndex/:id", authMiddleware, updateCurrentIndex);
 
 
 /**
@@ -231,9 +236,8 @@ router.put("/update/task/:id", updateAssignedTask);
  *       500:
  *         description: Internal server error
  */
-router.delete("/remove/task/:id", removeAssignedTask);
+router.delete("/remove/task/:id", authMiddleware, removeAssignedTask);
 
-router.put("/update/task/currentIndex/:id", updateCurrentIndex);
 
 /**
  *  @swagger
@@ -272,7 +276,7 @@ router.put("/update/task/currentIndex/:id", updateCurrentIndex);
  * 
  */
 
-router.get('/get/all/tasks', getAllTaskHandler);
+router.get('/get/all/tasks', authMiddleware, getAllTaskHandler);
 
 
 /**
@@ -304,7 +308,7 @@ router.get('/get/all/tasks', getAllTaskHandler);
  *       500:
  *         description: Internal server error
  */
-router.get("/get/task/:id", getAssignTaskById);
+router.get("/get/task/:id", authMiddleware, getAssignTaskById);
 
 
 
@@ -337,6 +341,6 @@ router.get("/get/task/:id", getAssignTaskById);
  *       500:
  *         description: Internal server error
  */
-router.get("/getall/tasks/:userId", getAllAssignedTaskByUserId);
+router.get("/getall/tasks/:userId", authMiddleware, getAllAssignedTaskByUserId);
 
 export default router;
