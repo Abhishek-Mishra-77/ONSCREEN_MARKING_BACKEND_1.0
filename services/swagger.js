@@ -1,17 +1,21 @@
 import swaggerJsdoc from 'swagger-jsdoc';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 
 const options = {
     definition: {
         openapi: '3.0.0',
         info: {
-            title: 'Project API Documentation',
+            title: 'ONSCREEN MARKING SYSTEM APIS',
             version: '1.0.0',
             description: 'API documentation for all backend endpoints.',
         },
         servers: [
             {
-                url: `http://localhost:8000`,
+                // url: `http://192.168.1.43:8000`,
+                url: process.env.SERVER_URL,
                 description: 'Development server',
             },
         ],

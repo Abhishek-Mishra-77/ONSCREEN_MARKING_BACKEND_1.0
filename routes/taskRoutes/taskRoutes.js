@@ -276,7 +276,7 @@ router.delete("/remove/task/:id", authMiddleware, removeAssignedTask);
  * 
  */
 
-router.get('/get/all/tasks', authMiddleware, getAllTaskHandler);
+router.get('/get/all/tasks', getAllTaskHandler);
 
 
 /**

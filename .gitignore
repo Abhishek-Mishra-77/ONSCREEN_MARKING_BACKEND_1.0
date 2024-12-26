@@ -1,13 +1,14 @@
 # Created by https://www.toptal.com/developers/gitignore/api/node
 # Edit at https://www.toptal.com/developers/gitignore?templates=node
 
-# MONGO_URL=mongodb+srv://abhishekomr077:abhishek07@cluster0.jltq9.mongodb.net/onscreenmarking?retryWrites=true&w=majority&appName=Cluster0
+# # MONGO_URL=mongodb+srv://abhishekomr077:abhishek07@cluster0.jltq9.mongodb.net/onscreenmarking?retryWrites=true&w=majority&appName=Cluster0
 # MONGO_URL=mongodb+srv://abhiarya97161:OtzYANBZMMFFYyD1@cluster0.03pwr.mongodb.net/onscreenmarking?retryWrites=true&w=majority&appName=Cluster0
 # PORT=8000
 # AUTHMAIL=abhishekomr077@gmail.com
 # AUTHPASSWORD=ayzs jnxx ehnn oqsx
 # JWT_SECRET=onscreenmarking
-# BASE_DIR=scanned
+# BASE_DIR=scannedData
+# SERVER_URL=http://192.168.1.43:8000
 
 
 

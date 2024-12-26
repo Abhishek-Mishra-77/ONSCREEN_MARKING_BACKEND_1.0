@@ -420,9 +420,10 @@ const getAssignTaskById = async (req, res) => {
     }
 };
 
+
 const getAllTaskHandler = async (req, res) => {
     try {
-        const tasks = await Task.find();
+        const tasks = await Task.find().populate('userId', 'name email');
         res.status(200).json(tasks);
     } catch (error) {
         console.error("Error fetching tasks:", error);
