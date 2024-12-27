@@ -306,7 +306,6 @@ const updateSubjectSchemaRelation = async (req, res) => {
 //             return res.status(404).json({ message: 'Schema not found.' });
 //         }
 
-//         console.log(questionDetails)
 
 //         const totalQuestions = questionDetails.totalQuestions;
 

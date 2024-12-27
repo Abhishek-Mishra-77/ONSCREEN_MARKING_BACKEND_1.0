@@ -17,7 +17,6 @@ export const listFiles = (req, res) => {
 
     if (!fs.existsSync(rootFolder)) {
         fs.mkdirSync(rootFolder, { recursive: true });
-        console.log(`${rootFolder} created successfully.`);
     } else {
     }
 
@@ -175,7 +174,6 @@ export const listFiles = (req, res) => {
             });
         });
     } else if (action === 'delete') {
-        console.log("DELETE ACTION --> ", folderPath);
 
         // Prevent deletion of the root folder
         if (folderPath === rootFolder || folderPath.startsWith(rootFolder + '/restricted')) {
@@ -212,7 +210,6 @@ export const uploadFile = (req, res) => {
 export const deleteFile = (req, res) => {
     const { name } = req.body;
 
-    console.log(name + "WORKING OM FINE")
 
     if (!name) {
         return res.status(400).json({ error: 'Invalid request' });

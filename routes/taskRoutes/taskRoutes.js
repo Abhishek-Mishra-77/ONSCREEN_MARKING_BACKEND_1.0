@@ -8,7 +8,8 @@ import {
     getAssignTaskById,
     getAllAssignedTaskByUserId,
     getAllTaskHandler,
-    updateCurrentIndex
+    updateCurrentIndex,
+    getQuestionDefinitionTaskId,
 } from "../../controllers/taskControllers/taskControllers.js";
 
 import authMiddleware from "../../Middlewares/authMiddleware.js";
@@ -16,8 +17,10 @@ import authMiddleware from "../../Middlewares/authMiddleware.js";
 /**
  * @swagger
  * tags:
- *   name: Tasks
- *   description: API for managing tasks
+ *   - name: Tasks
+ *     description: API for managing tasks
+ *   - name: QuestionDefinitions
+ *     description: API for managing question definitions
  */
 
 /* -------------------------------------------------------------------------- */
@@ -49,18 +52,25 @@ import authMiddleware from "../../Middlewares/authMiddleware.js";
  *             properties:
  *               userId:
  *                 type: string
- *               className :
+ *                 description: ID of the user
+ *               className:
  *                 type: string
+ *                 description: Name of the class
  *               subjectCode:
  *                 type: string
+ *                 description: Code of the subject
  *               subjectSchemaRelationId:
  *                 type: string
+ *                 description: ID of the subject schema relation
  *               folderPath:
  *                 type: string
+ *                 description: Path to the folder
  *               status:
  *                 type: string
+ *                 description: Status of the task
  *               taskName:
  *                 type: string
+ *                 description: Name of the task
  *     responses:
  *       200:
  *         description: Task assigned successfully
@@ -107,7 +117,7 @@ router.post("/create/task", authMiddleware, assigningTask);
  *             type: object
  *             required:
  *               - userId
- *               - className  
+ *               - className
  *               - subjectCode
  *               - subjectSchemaRelationId
  *               - folderPath
@@ -116,7 +126,7 @@ router.post("/create/task", authMiddleware, assigningTask);
  *             properties:
  *               userId:
  *                 type: string
- *               className :
+ *               className:
  *                 type: string
  *               subjectCode:
  *                 type: string
@@ -131,19 +141,6 @@ router.post("/create/task", authMiddleware, assigningTask);
  *     responses:
  *       200:
  *         description: Task updated successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 task:
- *                   type: object
- *                 pdfFiles:
- *                   type: array
- *                   items:
- *                     type: string
  *       400:
  *         description: Invalid task ID or input data
  *       404:
@@ -152,10 +149,6 @@ router.post("/create/task", authMiddleware, assigningTask);
  *         description: Internal server error
  */
 router.put("/update/task/:id", authMiddleware, updateAssignedTask);
-
-
-
-
 
 /**
  * @swagger
@@ -183,33 +176,18 @@ router.put("/update/task/:id", authMiddleware, updateAssignedTask);
  *             properties:
  *               currentIndex:
  *                 type: number
+ *                 description: New current index for the task
  *     responses:
  *       200:
  *         description: Current index updated successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 task:
- *                   type: object
- *                 pdfFiles:
- *                   type: array    
- *                   items:
- *                     type: string
  *       400:
- *         description: Invalid task ID or input data     
+ *         description: Invalid task ID or input data
  *       404:
  *         description: Task not found
  *       500:
  *         description: Internal server error
- * 
  */
-
 router.put("/update/task/currentIndex/:id", authMiddleware, updateCurrentIndex);
-
 
 /**
  * @swagger
@@ -236,11 +214,11 @@ router.put("/update/task/currentIndex/:id", authMiddleware, updateCurrentIndex);
  *       500:
  *         description: Internal server error
  */
+
 router.delete("/remove/task/:id", authMiddleware, removeAssignedTask);
 
-
 /**
- *  @swagger
+ * @swagger
  * /api/tasks/get/all/tasks:
  *   get:
  *     summary: Get all tasks
@@ -256,28 +234,10 @@ router.delete("/remove/task/:id", authMiddleware, removeAssignedTask);
  *               type: array
  *               items:
  *                 type: object
- *                 properties:
- *                   _id:
- *                     type: string
- *                   userId:
- *                     type: string
- *                   className:
- *                     type: string
- *                   subjectCode:
- *                     type: string
- *                   subjectSchemaRelationId:
- *                     type: string 
- *                   folderPath:
- *                     type: string
- *                   status:
- *                     type: string 
- *                   taskName:
- *                     type: string 
- * 
+ *       500:
+ *         description: Internal server error
  */
-
-router.get('/get/all/tasks', getAllTaskHandler);
-
+router.get("/get/all/tasks", authMiddleware, getAllTaskHandler);
 
 /**
  * @swagger
@@ -310,7 +270,37 @@ router.get('/get/all/tasks', getAllTaskHandler);
  */
 router.get("/get/task/:id", getAssignTaskById);
 
+/**
+ * @swagger
+ * /api/tasks/get/questiondefinition/{id}:
+ *   get:
+ *     summary: Get a question definition by ID
+ *     tags: [QuestionDefinitions]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         description: ID of the question definition to retrieve
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Question definition details retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *       400:
+ *         description: Invalid question definition ID
+ *       404:
+ *         description: Question definition not found
+ *       500:
+ *         description: Internal server error
+ */
 
+router.get("/get/questiondefinition/:id", getQuestionDefinitionTaskId);
 
 /**
  * @swagger
@@ -341,6 +331,7 @@ router.get("/get/task/:id", getAssignTaskById);
  *       500:
  *         description: Internal server error
  */
+
 router.get("/getall/tasks/:userId", authMiddleware, getAllAssignedTaskByUserId);
 
 export default router;

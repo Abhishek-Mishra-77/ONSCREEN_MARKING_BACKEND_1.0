@@ -4,13 +4,14 @@ import Task from "../../models/taskModels/taskModel.js";
 import { isValidObjectId } from "../../services/mongoIdValidation.js";
 import User from "../../models/authModels/User.js";
 import SubjectSchemaRelation from "../../models/subjectSchemaRelationModel/subjectSchemaRelationModel.js";
-import AnswerPdf from "../../models/taskModels/studentAnswerPdf.js";
+import AnswerPdf from "../../models/EvaluationModels/studentAnswerPdf.js";
 import Schema from "../../models/schemeModel/schema.js";
 import QuestionDefinition from "../../models/schemeModel/questionDefinitionSchema.js";
 import { fileURLToPath } from 'url';
 import mongoose from 'mongoose';
 import { PDFDocument } from 'pdf-lib';
 import extractImagesFromPdf from "./extractImagesFromPDF.js";
+import AnswerPdfImage from "../../models/EvaluationModels/answerPdfImageModel.js";
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -357,11 +358,6 @@ const getAssignTaskById = async (req, res) => {
             return res.status(404).json({ message: "Schema not found" });
         }
 
-        const questionDefinitions = await QuestionDefinition.find({ schemaId: schemaDetails._id, parentQuestionId: null });
-        if (!questionDefinitions) {
-            return res.status(404).json({ message: "QuestionDefinitions not found" });
-        }
-
         const { folderPath, currentFileIndex, totalFiles } = task;
 
         // Validate currentFileIndex
@@ -381,45 +377,61 @@ const getAssignTaskById = async (req, res) => {
         const extractedFolderPath = path.join(pdfFolderPath, "extractedPdfImages");
         const extractedPdfFolder = path.join(extractedFolderPath, path.basename(currentPdf, ".pdf"));
 
-
+        let allImages = [];
         // If extracted folder doesn't exist, create it and extract images from the PDF
         if (!fs.existsSync(extractedPdfFolder)) {
             fs.mkdirSync(extractedPdfFolder, { recursive: true });
             const pdfPath = path.join(pdfFolderPath, currentPdf);
-            const totalImages = await extractImagesFromPdf(pdfPath, extractedPdfFolder);
+            allImages = await extractImagesFromPdf(pdfPath, extractedPdfFolder);
 
             // Save the extraction details in the AnswerPdf model
             const existingAnswerPdf = await AnswerPdf.findOne({ taskId: task._id, answerPdfName: currentPdf });
+            let answerPdfDetails;
+
             if (!existingAnswerPdf) {
-                await AnswerPdf.create({
+                answerPdfDetails = await AnswerPdf.create({
                     taskId: task._id,
-                    totalImages,
+                    totalImages: allImages.length,
                     answerPdfName: currentPdf,
                 });
+            } else {
+                answerPdfDetails = existingAnswerPdf;
+            }
+
+            // Save the images to the AnswerPdfImage collection
+            // Ensure we do not duplicate entries by checking if the image already exists
+            for (let imageName of allImages) {
+                const existingImage = await AnswerPdfImage.findOne({ answerPdfId: answerPdfDetails._id, name: imageName });
+                if (!existingImage) {
+                    await AnswerPdfImage.create({
+                        answerPdfId: answerPdfDetails._id,
+                        name: imageName,
+                        status: "notVisited",
+                    });
+                }
             }
         }
 
         // Dynamically generate the path to the extracted images folder based on task.folderPath
         const extractedImagesFolder = path.join(task.folderPath, "extractedPdfImages", path.basename(currentPdf, ".pdf"));
 
-        // Retrieve the current AnswerPdf details
+        // Retrieve the current AnswerPdf details and associated images
         const answerPdfDetails = await AnswerPdf.findOne({ taskId: task._id, answerPdfName: currentPdf });
+        const answerPdfImages = await AnswerPdfImage.find({ answerPdfId: answerPdfDetails._id });
 
-
-        // Respond with the updated task details and folder path
+        // Respond with the updated task details, images, and folder path
         res.status(200).json({
             task,
             extractedImagesFolder: extractedImagesFolder,
             answerPdfDetails,
+            answerPdfImages,
             schemaDetails,
-            questionDefinitions,
         });
     } catch (error) {
         console.error("Error fetching task:", error);
         res.status(500).json({ message: "Failed to process task", error: error.message });
     }
 };
-
 
 const getAllTaskHandler = async (req, res) => {
     try {
@@ -477,6 +489,42 @@ const updateCurrentIndex = async (req, res) => {
 };
 
 
+const getQuestionDefinitionTaskId = async (req, res) => {
+    const { id } = req.params;
+    try {
+        if (!isValidObjectId(id)) {
+            return res.status(400).json({ message: "Invalid task ID." });
+        }
+        const task = await Task.findById(id);
+        if (!task) {
+            return res.status(404).json({ message: "Task not found" });
+        }
+
+        // Retrieve related details
+        const subjectSchemaRelationDetails = await SubjectSchemaRelation.findById(task.subjectSchemaRelationId);
+        if (!subjectSchemaRelationDetails) {
+            return res.status(404).json({ message: "SubjectSchemaRelation not found" });
+        }
+
+        const schemaDetails = await Schema.findById(subjectSchemaRelationDetails.schemaId);
+        if (!schemaDetails) {
+            return res.status(404).json({ message: "Schema not found" });
+        }
+
+        const questionDetails = await QuestionDefinition.find({ schemaId: subjectSchemaRelationDetails.schemaId });
+        if (!questionDetails) {
+            return res.status(404).json({ message: "QuestionDefinition not found" });
+        }
+
+
+        res.status(200).json(questionDetails);
+    } catch (error) {
+        console.error("Error fetching tasks:", error);
+        res.status(500).json({ message: "Failed to fetch tasks", error: error.message });
+    }
+}
+
+
 export {
     assigningTask,
     updateAssignedTask,
@@ -484,6 +532,7 @@ export {
     getAssignTaskById,
     getAllAssignedTaskByUserId,
     getAllTaskHandler,
-    updateCurrentIndex
+    updateCurrentIndex,
+    getQuestionDefinitionTaskId
 };
 

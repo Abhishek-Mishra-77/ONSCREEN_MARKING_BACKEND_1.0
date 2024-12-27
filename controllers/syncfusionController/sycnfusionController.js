@@ -859,7 +859,6 @@ router.post('/', function (req, res) {
 
     if (!fs.existsSync(contentRootPath)) {
         fs.mkdirSync(contentRootPath, { recursive: true });
-        console.log(`${contentRootPath} created successfully.`);
     } else {
     }
 

@@ -27,6 +27,7 @@ const options = {
         './routes/schemeRoutes/*.js',
         './routes/subjectSchemaRelationRoutes/*.js',
         './routes/taskRoutes/*.js',
+        './routes/evaluationRoutes/*.js',
     ],
 };
 
