@@ -300,7 +300,7 @@ router.get("/get/task/:id", getAssignTaskById);
  *         description: Internal server error
  */
 
-router.get("/get/questiondefinition/:id", getQuestionDefinitionTaskId);
+router.get("/get/questiondefinition", getQuestionDefinitionTaskId);
 
 /**
  * @swagger

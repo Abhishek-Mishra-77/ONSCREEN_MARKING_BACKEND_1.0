@@ -21,6 +21,8 @@ import coordinateAllocation from "./routes/subjectSchemaRelationRoutes/coordinat
 import taskRoutes from "./routes/taskRoutes/taskRoutes.js";
 import syncfusionController from "./controllers/syncfusionController/sycnfusionController.js";
 import answerPdfImageRoutes from './routes/evaluationRoutes/answerPdfImageRoutes.js'
+import marksRoutes from './routes/evaluationRoutes/marksRoutes.js';
+
 
 /* -------------------------------------------------------------------------- */
 /*                           SERVER CONFIGURATION                             */
@@ -63,6 +65,8 @@ app.use("/api/coordinates", coordinateAllocation);
 app.use("/api/tasks", taskRoutes);
 app.use("/api/syncfusion", syncfusionController)
 app.use("/api/evaluation/answerimages", answerPdfImageRoutes)
+app.use("/api/evaluation/marks", marksRoutes)
+
 
 
 /* -------------------------------------------------------------------------- */

@@ -27,6 +27,10 @@ const updateAnswerPdfImageById = async (req, res) => {
             return res.status(400).json({ message: "Invalid answerPdfImage ID." });
         }
 
+        if (!status) {
+            return res.status(400).json({ message: "Status is required." });
+        }
+
         const answerPdfImage = await AnswerPdfImage.findOneAndUpdate({ _id: id }, { status }, { new: true });
         if (!answerPdfImage) {
             return res.status(404).json({ message: "AnswerPdfImage not found" });

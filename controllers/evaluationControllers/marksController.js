@@ -1,0 +1,55 @@
+import Marks from "../../models/EvaluationModels/marksModel.js";
+import { isValidObjectId } from "../../services/mongoIdValidation.js";
+
+const createMarks = async (req, res) => {
+    const { questionDefinitionId, answerPdfId, allottedMarks, timerStamps } = req.body;
+
+    try {
+
+        if (!isValidObjectId(questionDefinitionId) || !isValidObjectId(answerPdfId)) {
+            return res.status(400).json({ message: "Invalid questionDefinitionId or answerPdfId." });
+        }
+
+        const marks = new Marks({ questionDefinitionId, answerPdfId, allottedMarks, timerStamps });
+        await marks.save();
+        res.status(201).json(marks);
+
+    }
+    catch (error) {
+        console.error("Error creating marks:", error);
+        res.status(500).json({ message: "Failed to create marks", error: error.message });
+    }
+
+};
+
+const updateMarks = async (req, res) => {
+    const { id } = req.params;
+    const { allottedMarks, timerStamps } = req.body;
+
+    try {
+
+        if (!isValidObjectId(id)) {
+            return res.status(400).json({ message: "Invalid marks ID." });
+        }
+
+        const marks = await Marks.findOneAndUpdate({ _id: id }, { allottedMarks, timerStamps }, { new: true });
+        if (!marks) {
+            return res.status(404).json({ message: "Marks not found." });
+        }
+        res.status(200).json(marks);
+    }
+    catch (error) {
+        console.error("Error updating marks:", error);
+        res.status(500).json({ message: "Failed to update marks", error: error.message });
+    }
+};
+
+
+
+
+
+
+export {
+    createMarks,
+    updateMarks
+}

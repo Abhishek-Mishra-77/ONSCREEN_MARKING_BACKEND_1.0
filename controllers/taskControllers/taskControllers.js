@@ -12,6 +12,7 @@ import mongoose from 'mongoose';
 import { PDFDocument } from 'pdf-lib';
 import extractImagesFromPdf from "./extractImagesFromPDF.js";
 import AnswerPdfImage from "../../models/EvaluationModels/answerPdfImageModel.js";
+import Marks from "../../models/EvaluationModels/marksModel.js";
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -490,17 +491,25 @@ const updateCurrentIndex = async (req, res) => {
 
 
 const getQuestionDefinitionTaskId = async (req, res) => {
-    const { id } = req.params;
+    const { answerPdfId, taskId } = req.query;
+
     try {
-        if (!isValidObjectId(id)) {
+        // Validate IDs
+        if (!isValidObjectId(taskId)) {
             return res.status(400).json({ message: "Invalid task ID." });
         }
-        const task = await Task.findById(id);
+
+        if (!isValidObjectId(answerPdfId)) {
+            return res.status(400).json({ message: "Invalid answerPdfId." });
+        }
+
+        // Retrieve the task
+        const task = await Task.findById(taskId);
         if (!task) {
             return res.status(404).json({ message: "Task not found" });
         }
 
-        // Retrieve related details
+        // Retrieve the related SubjectSchemaRelation and Schema
         const subjectSchemaRelationDetails = await SubjectSchemaRelation.findById(task.subjectSchemaRelationId);
         if (!subjectSchemaRelationDetails) {
             return res.status(404).json({ message: "SubjectSchemaRelation not found" });
@@ -511,18 +520,48 @@ const getQuestionDefinitionTaskId = async (req, res) => {
             return res.status(404).json({ message: "Schema not found" });
         }
 
-        const questionDetails = await QuestionDefinition.find({ schemaId: subjectSchemaRelationDetails.schemaId });
-        if (!questionDetails) {
-            return res.status(404).json({ message: "QuestionDefinition not found" });
+        // Fetch all QuestionDefinitions for the schema
+        const questionDefinitions = await QuestionDefinition.find({ schemaId: subjectSchemaRelationDetails.schemaId });
+        if (!questionDefinitions || questionDefinitions.length === 0) {
+            return res.status(404).json({ message: "No QuestionDefinitions found" });
         }
 
+        // Fetch Marks data based on the provided answerPdfId and questionDefinitionId
+        const marksData = await Marks.find({ answerPdfId: answerPdfId });
 
-        res.status(200).json(questionDetails);
+        // Add marks related data to the question definitions
+        const enrichedQuestionDefinitions = await Promise.all(
+            questionDefinitions.map(async (question) => {
+                // Find the related Marks entry for the current questionDefinitionId
+                const marks = marksData.find(m => m.questionDefinitionId.toString() === question._id.toString());
+
+                // If Marks entry exists, add its data, otherwise leave as empty
+                const marksInfo = marks ? {
+                    allottedMarks: marks.allottedMarks,
+                    answerPdfId: marks.answerPdfId,
+                    timerStamps: marks.timerStamps
+                } : {
+                    allottedMarks: "",
+                    answerPdfId: answerPdfId,
+                    timerStamps: ""
+                };
+
+                // Return the enriched question with Marks data
+                return {
+                    ...question.toObject(),
+                    ...marksInfo
+                };
+            })
+        );
+
+        // Send the enriched data as a response
+        res.status(200).json(enrichedQuestionDefinitions);
+
     } catch (error) {
         console.error("Error fetching tasks:", error);
         res.status(500).json({ message: "Failed to fetch tasks", error: error.message });
     }
-}
+};
 
 
 export {
