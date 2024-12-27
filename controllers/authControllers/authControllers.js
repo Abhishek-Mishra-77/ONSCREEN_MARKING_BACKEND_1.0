@@ -4,6 +4,8 @@ import bcrypt from 'bcryptjs';
 import sendOtpEmail from '../../services/otpService.js';
 import jwt from "jsonwebtoken";
 import { isValidObjectId } from '../../services/mongoIdValidation.js';
+import mongoose from 'mongoose';
+
 
 /* -------------------------------------------------------------------------- */
 /*                           USER CREATION                                    */
@@ -22,10 +24,14 @@ const createUser = async (req, res) => {
         return res.status(409).json({ message: "User already exists" });
     }
 
+    const session = await mongoose.startSession();
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
 
     try {
+        session.startTransaction();
+
         const newUser = new User({
             name,
             email,
@@ -44,10 +50,15 @@ const createUser = async (req, res) => {
             expiresAt: Date.now() + 10 * 60 * 1000
         });
 
+        await session.commitTransaction();
         res.status(201).json({ message: "User created successfully. Please verify your OTP." });
     } catch (error) {
+        await session.abortTransaction();
         console.error("Error during user creation:", error);
         res.status(500).json({ message: "Failed to send OTP", error: error.message });
+    }
+    finally {
+        session.endSession(); 
     }
 };
 
