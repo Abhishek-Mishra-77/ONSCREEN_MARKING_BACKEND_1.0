@@ -541,7 +541,7 @@ const getQuestionDefinitionTaskId = async (req, res) => {
                     answerPdfId: marks.answerPdfId,
                     timerStamps: marks.timerStamps
                 } : {
-                    allottedMarks: "",
+                    allottedMarks: 0,
                     answerPdfId: answerPdfId,
                     timerStamps: ""
                 };
