@@ -191,7 +191,10 @@ router.get("/getall/schema", getAllSchemas);
  * /api/schemas/getall/completed/schema:
  *   get:
  *     summary: Get all completed schemas
- *     description: This endpoint retrieves all schemas that have been marked as completed (status: true).
+ *     description: |
+ *       This endpoint retrieves all schemas that have been marked as completed
+ *       (status: true). The schemas that are marked as completed will be
+ *       returned as part of the response.
  *     tags: [Schemas]
  *     security:
  *       - BearerAuth: []
@@ -201,6 +204,7 @@ router.get("/getall/schema", getAllSchemas);
  *       500:
  *         description: Internal server error.
  */
+
 router.get("/getall/completed/schema", authMiddleware, getAllCompletedSchema);
 
 

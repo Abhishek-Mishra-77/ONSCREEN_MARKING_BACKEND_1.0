@@ -40,6 +40,8 @@ import authMiddleware from "../../Middlewares/authMiddleware.js";
  *               - schemaId
  *               - subjectId
  *               - relationName
+ *               - questionPdf
+ *               - answerPdf
  *             properties:
  *               schemaId:
  *                 type: string

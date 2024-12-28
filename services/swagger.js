@@ -20,6 +20,9 @@ const options = {
             },
         ],
     },
+    swaggerOptions: {
+        tryItOutEnabled: true,
+      },
     apis: [
         './routes/authRoutes/*.js',
         './routes/classRoutes/*.js',
@@ -32,7 +35,5 @@ const options = {
 };
 
 const swaggerDocs = swaggerJsdoc(options);
-
-console.log('Detected Paths:', swaggerDocs.paths);
 
 export default swaggerDocs;

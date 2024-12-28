@@ -5,22 +5,32 @@ const createMarks = async (req, res) => {
     const { questionDefinitionId, answerPdfId, allottedMarks, timerStamps } = req.body;
 
     try {
-
         if (!isValidObjectId(questionDefinitionId) || !isValidObjectId(answerPdfId)) {
             return res.status(400).json({ message: "Invalid questionDefinitionId or answerPdfId." });
         }
 
-        const marks = new Marks({ questionDefinitionId, answerPdfId, allottedMarks, timerStamps });
-        await marks.save();
-        res.status(201).json(marks);
+        const existingMarks = await Marks.findOne({ questionDefinitionId, answerPdfId });
 
-    }
-    catch (error) {
-        console.error("Error creating marks:", error);
-        res.status(500).json({ message: "Failed to create marks", error: error.message });
-    }
+        if (existingMarks) {
+            existingMarks.allottedMarks = allottedMarks;
+            existingMarks.timerStamps = timerStamps;
 
+            await existingMarks.save();
+
+            return res.status(200).json(existingMarks);
+        } else {
+            const marks = new Marks({ questionDefinitionId, answerPdfId, allottedMarks, timerStamps });
+            await marks.save();
+
+            return res.status(201).json(marks);
+        }
+
+    } catch (error) {
+        console.error("Error creating or updating marks:", error);
+        res.status(500).json({ message: "Failed to create or update marks", error: error.message });
+    }
 };
+
 
 const updateMarks = async (req, res) => {
     const { id } = req.params;

@@ -3,84 +3,100 @@ import Subject from "../../models/classModel/subjectModel.js";
 import QuestionDefinition from "../../models/schemeModel/questionDefinitionSchema.js";
 import { isValidObjectId } from "../../services/mongoIdValidation.js";
 import CoordinateAllocation from "../../models/subjectSchemaRelationModel/coordinateAllocationModel.js";
+import Schema from "../../models/schemeModel/schema.js";
 import fs from 'fs';
 import path from 'path';
 import extractImagesFromPdf from "./extractingPdfImages.js";
 
-
-
 /* -------------------------------------------------------------------------- */
 /*                              CREATE SUBJECT SCHEMA RELATION                */
 /* -------------------------------------------------------------------------- */
-const createSubjectSchemaRelation = async (req, res) => {
-    try {
-        const { schemaId, subjectId, relationName } = req.body;
 
-        if (!schemaId || !subjectId || !req.files.questionPdf || !req.files.answerPdf) {
+
+const createSubjectSchemaRelation = async (req, res) => {
+    console.log(req.files);
+
+    const { schemaId, subjectId, relationName } = req.body;
+    console.log('Schema ID:', schemaId);
+    console.log('Subject ID:', subjectId);
+    console.log('Relation Name:', relationName);
+
+    try {
+        // Validate incoming data
+        if (!schemaId || !subjectId || !req.files?.questionPdf || !req.files?.answerPdf) {
             return res.status(400).json({ message: "All fields are required." });
         }
 
+        // Validate ObjectId
         if (!isValidObjectId(subjectId) || !isValidObjectId(schemaId)) {
             return res.status(400).json({ message: "Invalid subjectId or schemaId." });
         }
 
+        // Ensure relationName is provided
         if (!relationName) {
             return res.status(400).json({ message: "Relation name is required." });
         }
 
+        // Check if the Subject exists
         const isValidSubject = await Subject.findOne({ _id: subjectId });
-
         if (!isValidSubject) {
             return res.status(404).json({ message: "Subject not found." });
         }
 
+        // Check if the Schema exists
         const isValidSchema = await Schema.findOne({ _id: schemaId });
-
         if (!isValidSchema) {
             return res.status(404).json({ message: "Schema not found." });
         }
 
-        const isRelationNameUnique = await SubjectSchemaRelation.findOne({ subjectId: subjectId, schemaId: schemaId, relationName: relationName });
-
+        // Check if the relation name is unique
+        const isRelationNameUnique = await SubjectSchemaRelation.findOne({ subjectId, schemaId, relationName });
         if (isRelationNameUnique) {
             return res.status(400).json({ message: "Relation name already exists." });
         }
 
-
-        // Define base directories
+        // Define base directories for storing files
         const baseDir = path.resolve(process.cwd(), 'uploadedPdfs');
         const questionPdfDir = path.join(baseDir, 'questionPdfs');
         const answerPdfDir = path.join(baseDir, 'answerPdfs');
         const extractedQuestionImageDir = path.join(baseDir, 'extractedQuestionPdfImages');
         const extractedAnswerImageDir = path.join(baseDir, 'extractedAnswerPdfImages');
 
-        // Ensure base directories exist
-        [questionPdfDir, answerPdfDir, extractedQuestionImageDir, extractedAnswerImageDir].forEach(dir => {
+        // Ensure the directories exist (ensure async operations)
+        const ensureDir = (dir) => {
             if (!fs.existsSync(dir)) {
                 fs.mkdirSync(dir, { recursive: true });
             }
-        });
+        };
 
-        // Move and rename PDF files
+        [questionPdfDir, answerPdfDir, extractedQuestionImageDir, extractedAnswerImageDir].forEach(ensureDir);
+
+        // Move and rename the PDF files
         const questionPdf = req.files.questionPdf[0];
         const answerPdf = req.files.answerPdf[0];
+
         const questionPdfPath = path.join(questionPdfDir, questionPdf.filename);
         const answerPdfPath = path.join(answerPdfDir, answerPdf.filename);
 
-        fs.renameSync(questionPdf.path, questionPdfPath);
-        fs.renameSync(answerPdf.path, answerPdfPath);
+        try {
+            fs.renameSync(questionPdf.path, questionPdfPath);
+            fs.renameSync(answerPdf.path, answerPdfPath);
+        } catch (error) {
+            console.error("Error moving files:", error);
+            return res.status(500).json({ error: "Error processing files" });
+        }
 
-        // Extract images from PDFs into dynamically named directories
+        // Extract images from PDFs and create directories for extracted images
         const questionImageSubDir = path.join(extractedQuestionImageDir, `${path.basename(questionPdf.filename, '.pdf')}`);
         const answerImageSubDir = path.join(extractedAnswerImageDir, `${path.basename(answerPdf.filename, '.pdf')}`);
 
-        if (!fs.existsSync(questionImageSubDir)) fs.mkdirSync(questionImageSubDir, { recursive: true });
-        if (!fs.existsSync(answerImageSubDir)) fs.mkdirSync(answerImageSubDir, { recursive: true });
+        ensureDir(questionImageSubDir);
+        ensureDir(answerImageSubDir);
 
         const questionImageCount = await extractImagesFromPdf(questionPdfPath, questionImageSubDir);
         const answerImageCount = await extractImagesFromPdf(answerPdfPath, answerImageSubDir);
 
-        // Save the new SubjectSchemaRelation
+        // Create the new SubjectSchemaRelation document
         const newSubjectSchemaRelation = new SubjectSchemaRelation({
             schemaId,
             subjectId,
@@ -88,18 +104,21 @@ const createSubjectSchemaRelation = async (req, res) => {
             answerPdfPath: `${path.basename(answerPdf.filename, '.pdf')}`,
             countOfQuestionImages: questionImageCount,
             countOfAnswerImages: answerImageCount,
-            relationName: relationName,
+            relationName,
             coordinateStatus: false
         });
 
         const savedSubjectSchemaRelation = await newSubjectSchemaRelation.save();
 
+        // Respond with the saved SubjectSchemaRelation
         res.status(201).json(savedSubjectSchemaRelation);
     } catch (error) {
-        console.error(error);
+        console.error("Error creating subject schema relation:", error);
         res.status(500).json({ error: 'An error occurred while creating the subject schema relation.' });
     }
 };
+
+export default createSubjectSchemaRelation;
 
 /* -------------------------------------------------------------------------- */
 /*                           GET SUBJECT SCHEMA RELATION                      */
@@ -416,6 +435,10 @@ const getAllSubjectSchemaRelationBySchemaIdAndSubjectId = async (req, res) => {
 
 }
 
+/* -------------------------------------------------------------------------- */
+/*                           GET ALL SUBJECT SCHEMA RELATION                  */
+/* -------------------------------------------------------------------------- */
+
 const getAllSubjectSchemaRelationBySubjectIdCoordinateStatusTrue = async (req, res) => {
     const { subjectId } = req.params;
 
@@ -440,10 +463,12 @@ const getAllSubjectSchemaRelationBySubjectIdCoordinateStatusTrue = async (req, r
 }
 
 export {
+    // Return the subject schema relations
     createSubjectSchemaRelation,
     getSubjectSchemaRelationById,
     deleteSubjectSchemaRelationById,
     updateSubjectSchemaRelation,
+    // Handle internal server error
     getAllSubjectSchemaRelationBySubjectId,
     getAllSubjectSchemaRelationBySchemaId,
     getAllSubjectSchemaRelationBySchemaIdAndSubjectId,

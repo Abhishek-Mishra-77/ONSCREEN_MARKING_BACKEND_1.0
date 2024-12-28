@@ -42,6 +42,4 @@ const updateAnswerPdfImageById = async (req, res) => {
     }
 };
 
-
-
 export { getAnswerPdfImages, updateAnswerPdfImageById }

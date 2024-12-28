@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
-import fileUpload from 'express-fileupload';
+// import fileUpload from 'express-fileupload';
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpecs from "./services/swagger.js";
 
@@ -31,17 +31,13 @@ import marksRoutes from './routes/evaluationRoutes/marksRoutes.js';
 
 // For handling file uploads
 
-console.log(process.env.SERVER_URL)
-
-
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
-app.use(fileUpload());
+// app.use(fileUpload());
 app.use(express.json());
 app.use(cors());
 
@@ -66,7 +62,6 @@ app.use("/api/tasks", taskRoutes);
 app.use("/api/syncfusion", syncfusionController)
 app.use("/api/evaluation/answerimages", answerPdfImageRoutes)
 app.use("/api/evaluation/marks", marksRoutes)
-
 
 
 /* -------------------------------------------------------------------------- */

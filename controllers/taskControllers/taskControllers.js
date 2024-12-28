@@ -153,7 +153,6 @@ const assigningTask = async (req, res) => {
     }
 };
 
-
 const updateAssignedTask = async (req, res) => {
     const { userId, subjectSchemaRelationId, folderPath, status, taskName, className, subjectCode, currentFileIndex } = req.body;
     const { id } = req.params;
@@ -488,7 +487,6 @@ const updateCurrentIndex = async (req, res) => {
         res.status(500).json({ message: "Failed to update task", error: error.message });
     }
 };
-
 
 const getQuestionDefinitionTaskId = async (req, res) => {
     const { answerPdfId, taskId } = req.query;
