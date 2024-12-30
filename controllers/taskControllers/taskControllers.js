@@ -462,8 +462,13 @@ const updateCurrentIndex = async (req, res) => {
     const { currentIndex } = req.body;
 
     try {
+
         if (!isValidObjectId(id)) {
             return res.status(400).json({ message: "Invalid task ID." });
+        }
+
+        if (!currentIndex) {
+            return res.status(400).json({ message: "Invalid current index." });
         }
 
         const task = await Task.findById(id);
