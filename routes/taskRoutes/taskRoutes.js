@@ -187,6 +187,7 @@ router.put("/update/task/:id", authMiddleware, updateAssignedTask);
  *       500:
  *         description: Internal server error
  */
+
 router.put("/update/task/currentIndex/:id", authMiddleware, updateCurrentIndex);
 
 /**
