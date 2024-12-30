@@ -58,7 +58,7 @@ const createUser = async (req, res) => {
         res.status(500).json({ message: "Failed to send OTP", error: error.message });
     }
     finally {
-        session.endSession(); 
+        session.endSession();
     }
 };
 
@@ -266,15 +266,15 @@ const getUserById = async (req, res) => {
 const getAllUsers = async (req, res) => {
     try {
         const users = await User.find();
-        if (!users) {
-            return res.status(404).json({ message: "No users found" });
+        if (!users || users.length === 0) {
+            return res.status(200).json({ message: "No users found", users: [] });
         }
         res.status(200).json(users);
     } catch (error) {
         console.error("Error fetching users:", error);
         res.status(500).json({ message: "Failed to fetch users", error: error.message });
     }
-}
+};
 
 /* -------------------------------------------------------------------------- */
 /*                           UPDATE USER DETAILS                              */

@@ -237,7 +237,7 @@ router.delete("/remove/task/:id", authMiddleware, removeAssignedTask);
  *       500:
  *         description: Internal server error
  */
-router.get("/get/all/tasks", authMiddleware, getAllTaskHandler);
+router.get("/get/all/tasks", getAllTaskHandler);
 
 /**
  * @swagger

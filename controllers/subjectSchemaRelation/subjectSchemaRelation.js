@@ -17,9 +17,6 @@ const createSubjectSchemaRelation = async (req, res) => {
     console.log(req.files);
 
     const { schemaId, subjectId, relationName } = req.body;
-    console.log('Schema ID:', schemaId);
-    console.log('Subject ID:', subjectId);
-    console.log('Relation Name:', relationName);
 
     try {
         // Validate incoming data
