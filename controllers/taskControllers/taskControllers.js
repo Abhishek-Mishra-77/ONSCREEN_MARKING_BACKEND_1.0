@@ -542,11 +542,13 @@ const getQuestionDefinitionTaskId = async (req, res) => {
                 const marksInfo = marks ? {
                     allottedMarks: marks.allottedMarks,
                     answerPdfId: marks.answerPdfId,
-                    timerStamps: marks.timerStamps
+                    timerStamps: marks.timerStamps,
+                    isMarked: marks.isMarked
                 } : {
                     allottedMarks: 0,
                     answerPdfId: answerPdfId,
-                    timerStamps: ""
+                    timerStamps: "",
+                    isMarked: false
                 };
 
                 // Return the enriched question with Marks data

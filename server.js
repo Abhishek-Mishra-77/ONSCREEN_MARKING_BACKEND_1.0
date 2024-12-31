@@ -22,6 +22,7 @@ import taskRoutes from "./routes/taskRoutes/taskRoutes.js";
 import syncfusionController from "./controllers/syncfusionController/sycnfusionController.js";
 import answerPdfImageRoutes from './routes/evaluationRoutes/answerPdfImageRoutes.js'
 import marksRoutes from './routes/evaluationRoutes/marksRoutes.js';
+import iconRoutes from './routes/evaluationRoutes/iconRoutes.js'
 
 
 /* -------------------------------------------------------------------------- */
@@ -62,6 +63,7 @@ app.use("/api/tasks", taskRoutes);
 app.use("/api/syncfusion", syncfusionController)
 app.use("/api/evaluation/answerimages", answerPdfImageRoutes)
 app.use("/api/evaluation/marks", marksRoutes)
+app.use("/api/evaluation/icons", iconRoutes)
 
 
 /* -------------------------------------------------------------------------- */

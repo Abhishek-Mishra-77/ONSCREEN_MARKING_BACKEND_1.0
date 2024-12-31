@@ -42,6 +42,8 @@ import authMiddleware from "../../Middlewares/authMiddleware.js";
  *                 type: number
  *               timerStamps:
  *                 type: string
+ *               isMarked:
+ *                 type: boolean
  *     responses:
  *       200:
  *         description: Marks created successfully  
@@ -85,6 +87,8 @@ router.post('/create', createMarks);
  *                 type: number 
  *               timerStamps:
  *                 type: string
+ *               isMarked:
+ *                 type: boolean
  *     responses:
  *       200:
  *         description: Marks updated successfully

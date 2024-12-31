@@ -2,7 +2,7 @@ import Marks from "../../models/EvaluationModels/marksModel.js";
 import { isValidObjectId } from "../../services/mongoIdValidation.js";
 
 const createMarks = async (req, res) => {
-    const { questionDefinitionId, answerPdfId, allottedMarks, timerStamps } = req.body;
+    const { questionDefinitionId, answerPdfId, allottedMarks, timerStamps, isMarked } = req.body;
 
     try {
         if (!isValidObjectId(questionDefinitionId) || !isValidObjectId(answerPdfId)) {
@@ -14,12 +14,13 @@ const createMarks = async (req, res) => {
         if (existingMarks) {
             existingMarks.allottedMarks = allottedMarks;
             existingMarks.timerStamps = timerStamps;
+            existingMarks.isMarked = isMarked;
 
             await existingMarks.save();
 
             return res.status(200).json(existingMarks);
         } else {
-            const marks = new Marks({ questionDefinitionId, answerPdfId, allottedMarks, timerStamps });
+            const marks = new Marks({ questionDefinitionId, answerPdfId, allottedMarks, timerStamps, isMarked: isMarked });
             await marks.save();
 
             return res.status(201).json(marks);
@@ -53,11 +54,6 @@ const updateMarks = async (req, res) => {
         res.status(500).json({ message: "Failed to update marks", error: error.message });
     }
 };
-
-
-
-
-
 
 export {
     createMarks,

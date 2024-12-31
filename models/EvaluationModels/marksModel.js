@@ -18,6 +18,10 @@ const marksSchema = new mongoose.Schema({
     timerStamps: {
         type: String,
         required: true
+    },
+    isMarked: {
+        type: Boolean,
+        default: false
     }
 })
 
