@@ -108,7 +108,9 @@ const removeIconByIdHandler = async (req, res) => {
 };
 
 
-const removeAllAsscoiatedIcons = async (req, res) => { };
+const removeAllAsscoiatedIcons = async (req, res) => {
+
+};
 
 const getIconsById = async (req, res) => { };
 
