@@ -35,7 +35,7 @@ const createMarks = async (req, res) => {
 
 const updateMarks = async (req, res) => {
     const { id } = req.params;
-    const { allottedMarks, timerStamps } = req.body;
+    const { allottedMarks, timerStamps, isMarked } = req.body;
 
     try {
 
@@ -43,7 +43,7 @@ const updateMarks = async (req, res) => {
             return res.status(400).json({ message: "Invalid marks ID." });
         }
 
-        const marks = await Marks.findOneAndUpdate({ _id: id }, { allottedMarks, timerStamps }, { new: true });
+        const marks = await Marks.findOneAndUpdate({ _id: id }, { allottedMarks, timerStamps, isMarked }, { new: true });
         if (!marks) {
             return res.status(404).json({ message: "Marks not found." });
         }
