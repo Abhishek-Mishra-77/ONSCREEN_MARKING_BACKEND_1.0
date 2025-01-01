@@ -23,10 +23,6 @@ const iconSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    size: {
-        type: String,
-        required: true
-    },
     x: {
         type: String,
         required: true

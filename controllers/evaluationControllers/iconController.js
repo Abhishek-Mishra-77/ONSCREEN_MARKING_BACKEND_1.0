@@ -6,17 +6,20 @@ import AnswerPdfImage from "../../models/EvaluationModels/answerPdfImageModel.js
 
 
 const createIconHandler = async (req, res) => {
-    const { answerPdfImageId, questionDefinitionId, iconUrl, question, timeStamps, size, x, y, width, height, mark } = req.body;
+    const { answerPdfImageId, questionDefinitionId, iconUrl, question, timeStamps, x, y, width, height, mark } = req.body;
+
+    console.log(answerPdfImageId , questionDefinitionId)
+
     try {
         if (!isValidObjectId(answerPdfImageId) || !isValidObjectId(questionDefinitionId)) {
             return res.status(400).json({ message: "Invalid answerPdfImageId or questionDefinitionId." });
         }
 
-        if (!iconUrl || !question || !timeStamps || !size || !x || !y || !width || !height || !mark) {
+        if (!iconUrl || !question || !timeStamps || !x || !y || !width || !height || !mark) {
             return res.status(400).json({ message: "All fields are required." });
         }
 
-        const icon = new Icon({ answerPdfImageId, questionDefinitionId, iconUrl, question, timeStamps, size, x, y, width, height, mark });
+        const icon = new Icon({ answerPdfImageId, questionDefinitionId, iconUrl, question, timeStamps, x, y, width, height, mark });
 
         if (!icon) {
             return res.status(400).json({ message: "Failed to create icon." });
@@ -32,7 +35,7 @@ const createIconHandler = async (req, res) => {
 };
 
 const updateIconHandler = async (req, res) => {
-    const { answerPdfImageId, questionDefinitionId, iconUrl, question, timeStamps, size, x, y, width, height, mark } = req.body;
+    const { answerPdfImageId, questionDefinitionId, iconUrl, question, timeStamps, x, y, width, height, mark } = req.body;
     const { id } = req.params;
 
     try {
@@ -43,11 +46,11 @@ const updateIconHandler = async (req, res) => {
             return res.status(400).json({ message: "Invalid answerPdfImageId or questionDefinitionId." });
         }
 
-        if (!answerPdfImageId || !questionDefinitionId || !iconUrl || !question || !timeStamps || !size || !x || !y || !width || !height || !mark) {
+        if (!answerPdfImageId || !questionDefinitionId || !iconUrl || !question || !timeStamps || !x || !y || !width || !height || !mark) {
             return res.status(400).json({ message: "All fields are required." });
         }
 
-        const updatedIcon = await Icon.findByIdAndUpdate(id, { answerPdfImageId, questionDefinitionId, iconUrl, question, timeStamps, size, x, y, width, height, mark }, { new: true });
+        const updatedIcon = await Icon.findByIdAndUpdate(id, { answerPdfImageId, questionDefinitionId, iconUrl, question, timeStamps, x, y, width, height, mark }, { new: true });
 
         if (!updatedIcon) {
             return res.status(404).json({ message: "Icon not found." });

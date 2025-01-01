@@ -52,9 +52,6 @@ import authMiddleware from "../../Middlewares/authMiddleware.js";
  *               timeStamps:
  *                 type: string
  *                 description: The timestamps related to the icon
- *               size:
- *                 type: string
- *                 description: The size of the icon (e.g., small, medium, large)
  *               x:
  *                 type: string
  *                 description: The x position of the icon
@@ -89,8 +86,6 @@ import authMiddleware from "../../Middlewares/authMiddleware.js";
  *                 question:
  *                   type: string
  *                 timeStamps:
- *                   type: string
- *                 size:
  *                   type: string
  *                 x:
  *                   type: string
@@ -146,9 +141,6 @@ router.post("/create", createIconHandler);
  *               timeStamps:
  *                 type: string
  *                 description: The timestamps related to the icon
- *               size:
- *                 type: string
- *                 description: The size of the icon (e.g., small, medium, large)
  *               x:
  *                 type: string
  *                 description: The x position of the icon
@@ -183,8 +175,6 @@ router.post("/create", createIconHandler);
  *                 question:
  *                   type: string
  *                 timeStamps:
- *                   type: string
- *                 size:
  *                   type: string
  *                 x:
  *                   type: string
@@ -246,8 +236,6 @@ router.put("/update/:id", updateIconHandler);
  *                     type: string
  *                   timeStamps:
  *                     type: string
- *                   size:
- *                     type: string
  *                   x:
  *                     type: string
  *                   y:
@@ -297,8 +285,6 @@ router.get("/geticons", getAllIconsByQuestionIdAndAnswerImageId);
  *                 question:
  *                   type: string
  *                 timeStamps:
- *                   type: string
- *                 size:
  *                   type: string
  *                 x:
  *                   type: string
