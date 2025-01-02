@@ -4,11 +4,10 @@ import mongoose from "mongoose";
 import { isValidObjectId } from "../../services/mongoIdValidation.js";
 import AnswerPdfImage from "../../models/EvaluationModels/answerPdfImageModel.js";
 
-
 const createIconHandler = async (req, res) => {
     const { answerPdfImageId, questionDefinitionId, iconUrl, question, timeStamps, x, y, width, height, mark } = req.body;
 
-    console.log(answerPdfImageId , questionDefinitionId)
+    console.log(answerPdfImageId, questionDefinitionId)
 
     try {
         if (!isValidObjectId(answerPdfImageId) || !isValidObjectId(questionDefinitionId)) {

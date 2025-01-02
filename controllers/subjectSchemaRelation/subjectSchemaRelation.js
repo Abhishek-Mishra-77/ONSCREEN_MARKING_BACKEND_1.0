@@ -14,8 +14,6 @@ import extractImagesFromPdf from "./extractingPdfImages.js";
 
 
 const createSubjectSchemaRelation = async (req, res) => {
-    console.log(req.files);
-
     const { schemaId, subjectId, relationName } = req.body;
 
     try {
