@@ -5,31 +5,94 @@ import { isValidObjectId } from "../../services/mongoIdValidation.js";
 import AnswerPdfImage from "../../models/EvaluationModels/answerPdfImageModel.js";
 
 const createIconHandler = async (req, res) => {
-    const { answerPdfImageId, questionDefinitionId, iconUrl, question, timeStamps, x, y, width, height, mark } = req.body;
+    const {
+        answerPdfImageId,
+        questionDefinitionId,
+        iconUrl,
+        question,
+        timeStamps,
+        x,
+        y,
+        width,
+        height,
+        mark
+    } = req.body;
 
-    console.log(answerPdfImageId, questionDefinitionId)
+    const session = await mongoose.startSession();
 
     try {
         if (!isValidObjectId(answerPdfImageId) || !isValidObjectId(questionDefinitionId)) {
             return res.status(400).json({ message: "Invalid answerPdfImageId or questionDefinitionId." });
         }
 
-        if (!iconUrl || !question || !timeStamps || !x || !y || !width || !height || !mark) {
+        if (!iconUrl || !question || !timeStamps || !x || !y || !width || !height) {
             return res.status(400).json({ message: "All fields are required." });
         }
 
-        const icon = new Icon({ answerPdfImageId, questionDefinitionId, iconUrl, question, timeStamps, x, y, width, height, mark });
+        session.startTransaction();
+
+        if (iconUrl === "/close.png") {
+            await Icon.deleteMany({ answerPdfImageId, questionDefinitionId }).session(session);
+
+            const answerPdfDetails = await AnswerPdfImage.findById(answerPdfImageId).session(session);
+
+            if (!answerPdfDetails) {
+                await session.abortTransaction();
+                return res.status(404).json({ message: "AnswerPdfImage not found." });
+            }
+
+            const marks = await Marks.findOne({
+                answerPdfId: answerPdfDetails.answerPdfId,
+                questionDefinitionId: questionDefinitionId
+            }).session(session);
+
+            if (!marks) {
+                await session.abortTransaction();
+                return res.status(404).json({ message: "Marks not found." });
+            }
+
+            marks.allottedMarks = 0;
+            await marks.save({ session });
+        }
+
+        const icon = new Icon({
+            answerPdfImageId,
+            questionDefinitionId,
+            iconUrl,
+            question,
+            timeStamps,
+            x,
+            y,
+            width,
+            height,
+            mark: mark ? mark : 0
+        });
 
         if (!icon) {
+            await session.abortTransaction();
             return res.status(400).json({ message: "Failed to create icon." });
         }
 
-        const savedIcon = await icon.save();
+        const answerPdfDetails = await AnswerPdfImage.findById(answerPdfImageId).session(session);
+
+        if (!answerPdfDetails) {
+            await session.abortTransaction();
+            return res.status(404).json({ message: "AnswerPdfImage not found." });
+        }
+
+        answerPdfDetails.status = "submitted";
+        await answerPdfDetails.save({ session });
+
+        const savedIcon = await icon.save({ session });
+
+        await session.commitTransaction();
         res.status(201).json(savedIcon);
-    }
-    catch (error) {
+    } catch (error) {
         console.error("Error creating icon:", error);
+        await session.abortTransaction();
         res.status(500).json({ message: "Failed to create icon", error: error.message });
+    } finally {
+        session.endSession();
     }
 };
 
@@ -61,7 +124,6 @@ const updateIconHandler = async (req, res) => {
         res.status(500).json({ message: "Failed to update icon", error: error.message });
     }
 };
-
 
 const removeIconByIdHandler = async (req, res) => {
     const { iconsId, answerPdfId } = req.query;
@@ -98,6 +160,21 @@ const removeIconByIdHandler = async (req, res) => {
             await marks.save({ session });
         }
 
+        const iconsDetails = await Icon.find({ answerPdfImageId: deletedIcon.answerPdfImageId, questionDefinitionId: deletedIcon.questionDefinitionId }).session(session);
+
+
+        if (iconsDetails.length === 0) {
+            const answerPdfDetails = await AnswerPdfImage.findById(deletedIcon.answerPdfImageId).session(session);
+
+            if (!answerPdfDetails) {
+                await session.abortTransaction();
+                return res.status(404).json({ message: "AnswerPdfImage not found." });
+            }
+
+            answerPdfDetails.status = "visited";
+            await answerPdfDetails.save({ session });
+        }
+
         // Commit the transaction
         await session.commitTransaction();
         res.status(200).json({ message: "Icon deleted successfully." });
@@ -111,7 +188,6 @@ const removeIconByIdHandler = async (req, res) => {
         session.endSession();
     }
 };
-
 
 const removeAllAsscoiatedIcons = async (req, res) => {
     const { answerPdfImageId, questionDefinitionId } = req.query;
@@ -169,14 +245,14 @@ const getIconsById = async (req, res) => {
 };
 
 const getAllIconsByQuestionIdAndAnswerImageId = async (req, res) => {
-    const { questionDefinitionId, answerPdfImageId } = req.query;
+    const { answerPdfImageId } = req.query;
 
     try {
-        if (!isValidObjectId(questionDefinitionId) || !isValidObjectId(answerPdfImageId)) {
-            return res.status(400).json({ message: "Invalid questionDefinitionId or answerPdfId." });
+        if (!isValidObjectId(answerPdfImageId)) {
+            return res.status(400).json({ message: "Invalid  answerPdfId." });
         }
 
-        const icons = await Icon.find({ questionDefinitionId, answerPdfImageId });
+        const icons = await Icon.find({ answerPdfImageId });
 
         res.status(200).json(icons);
     } catch (error) {

@@ -3,13 +3,13 @@ import { isValidObjectId } from "../../services/mongoIdValidation.js";
 
 const createMarks = async (req, res) => {
     const { questionDefinitionId, answerPdfId, allottedMarks, timerStamps, isMarked } = req.body;
-
     try {
         if (!isValidObjectId(questionDefinitionId) || !isValidObjectId(answerPdfId)) {
             return res.status(400).json({ message: "Invalid questionDefinitionId or answerPdfId." });
         }
 
         const existingMarks = await Marks.findOne({ questionDefinitionId, answerPdfId });
+
 
         if (existingMarks) {
             existingMarks.allottedMarks = allottedMarks;
