@@ -6,8 +6,7 @@ import {
     updateIconHandler,
     removeIconByIdHandler,
     getIconsById,
-    getAllIconsByQuestionIdAndAnswerImageId,
-    removeAllAsscoiatedIcons
+    getAllIconsByQuestionIdAndAnswerImageId
 } from "../../controllers/evaluationControllers/iconController.js";
 import authMiddleware from "../../Middlewares/authMiddleware.js";
 
@@ -338,35 +337,5 @@ router.get("/get/:id", getIconsById);
  */
 router.delete("/remove", removeIconByIdHandler);
 
-/**
- * @swagger
- * /api/evaluation/icons/removeall:
- *   delete:
- *     summary: Delete all icons associated with a questionDefinitionId and answerPdfImageId
- *     tags: [Icons]
- *     security:
- *       - BearerAuth: []
- *     parameters:
- *       - in: query
- *         name: answerPdfImageId
- *         required: true
- *         description: The ID of the answer PDF image
- *         schema:
- *           type: string
- *       - in: query
- *         name: questionDefinitionId
- *         required: true
- *         description: The ID of the question definition
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: All icons successfully deleted
- *       400:
- *         description: Invalid query parameters
- *       500:
- *         description: Internal server error
- */
-router.delete("/removeall", removeAllAsscoiatedIcons);
 
 export default router;

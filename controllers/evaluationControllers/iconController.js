@@ -189,40 +189,6 @@ const removeIconByIdHandler = async (req, res) => {
     }
 };
 
-const removeAllAsscoiatedIcons = async (req, res) => {
-    const { answerPdfImageId, questionDefinitionId } = req.query;
-
-    try {
-        if (!isValidObjectId(answerPdfImageId) || !isValidObjectId(questionDefinitionId)) {
-            return res.status(400).json({ message: "Invalid answerPdfImageId or questionDefinitionId." });
-        }
-
-        await Icon.deleteMany({ answerPdfImageId, questionDefinitionId });
-
-        const answerPdfDetails = await AnswerPdfImage.findById(answerPdfImageId);
-
-        if (!answerPdfDetails) {
-            return res.status(404).json({ message: "AnswerPdfImage not found." });
-        }
-
-        const marks = await Marks.findOne({ answerPdfId: answerPdfDetails.answerPdfId, questionDefinitionId: questionDefinitionId });
-
-        if (!marks) {
-            return res.status(404).json({ message: "Marks not found." });
-        }
-
-        marks.allottedMarks = 0;
-        marks.isMarked = false;
-
-        await marks.save();
-
-        res.status(200).json({ message: "Icons deleted successfully." });
-    } catch (error) {
-        console.error("Error deleting icons:", error);
-        res.status(500).json({ message: "Failed to delete icons", error: error.message });
-    }
-};
-
 const getIconsById = async (req, res) => {
     const { id } = req.params;
 
@@ -266,6 +232,5 @@ export {
     updateIconHandler,
     removeIconByIdHandler,
     getIconsById,
-    removeAllAsscoiatedIcons,
     getAllIconsByQuestionIdAndAnswerImageId
 }
