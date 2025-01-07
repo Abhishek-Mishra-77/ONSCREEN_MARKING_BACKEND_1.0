@@ -9,7 +9,8 @@ import {
     getAllSubjectSchemaRelationBySubjectId,
     getAllSubjectSchemaRelationBySchemaId,
     getAllSubjectSchemaRelationBySchemaIdAndSubjectId,
-    getAllSubjectSchemaRelationBySubjectIdCoordinateStatusTrue
+    getAllSubjectSchemaRelationBySubjectIdCoordinateStatusTrue,
+    getAllCoordinatesAndSchemaRelationDetails
 } from "../../controllers/subjectSchemaRelation/subjectSchemaRelation.js"
 
 import uploadMiddleware from '../../controllers/subjectSchemaRelation/uploadingPdf.js';
@@ -203,6 +204,40 @@ router.get('/getsubjectbyid/:id', getSubjectSchemaRelationById);
  *         description: Internal server error.
  */
 router.get('/getallsubjectschemarelationstatustrue/:subjectId', authMiddleware, getAllSubjectSchemaRelationBySubjectIdCoordinateStatusTrue);
+
+/**
+ * @swagger
+ * /api/subjects/relations/getallsubjectschemarelationstatusfalse:
+ *   get:
+ *     summary: Get all subject schema relations with coordinateStatus false
+ *     tags: [Subject Schema Relation]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: questionDefinitionId
+ *         in: query
+ *         required: true
+ *         description: The ID of the question definition.
+ *         schema:
+ *           type: string
+ *       - name: subjectRelationId
+ *         in: query
+ *         required: true
+ *         description: The ID of the subject relation.
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Subject schema relations retrieved successfully.
+ *       404:
+ *         description: No subject schema relations found with the given status.
+ *       400:
+ *         description: Invalid input, either questionDefinitionId or subjectRelationId is missing or invalid.
+ *       500:
+ *         description: Internal server error.
+ */
+router.get('/getallcoordinatesandschemarelationdetails', getAllCoordinatesAndSchemaRelationDetails);
+
 
 /**
  * @swagger
