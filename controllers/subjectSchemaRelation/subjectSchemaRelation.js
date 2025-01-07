@@ -457,13 +457,15 @@ const getAllSubjectSchemaRelationBySubjectIdCoordinateStatusTrue = async (req, r
     }
 }
 
+const getAllCoordinatesAndSchemaRelationDetails = async (req, res) => {
+
+}
+
 export {
-    // Return the subject schema relations
     createSubjectSchemaRelation,
     getSubjectSchemaRelationById,
     deleteSubjectSchemaRelationById,
     updateSubjectSchemaRelation,
-    // Handle internal server error
     getAllSubjectSchemaRelationBySubjectId,
     getAllSubjectSchemaRelationBySchemaId,
     getAllSubjectSchemaRelationBySchemaIdAndSubjectId,
