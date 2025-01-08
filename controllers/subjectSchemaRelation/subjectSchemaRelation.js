@@ -467,8 +467,8 @@ const getAllCoordinatesAndSchemaRelationDetails = async (req, res) => {
             return res.status(400).json({ message: " Invalid subject schema relation ID or question definition ID." });
         }
 
-        const subjectSchemaRelation = await SubjectSchemaRelation.findById({ _id: questionDefinitionId });
-        const coordinateDetails = await CoordinateAllocation.find({ courseSchemaRelationId: subjectRelationId, questionDefinitionId: questionDefinitionId });
+        const subjectSchemaRelation = await SubjectSchemaRelation.findById({ _id: subjectRelationId });
+        const coordinateDetails = await CoordinateAllocation.find({ courseSchemaRelationId: subjectRelationId, questionId: questionDefinitionId });
 
         if (!subjectSchemaRelation) {
             return res.status(404).json({ message: "Subject schema relation not found." });
@@ -477,7 +477,6 @@ const getAllCoordinatesAndSchemaRelationDetails = async (req, res) => {
         if (!coordinateDetails) {
             return res.status(404).json({ message: "Coordinates not found." });
         }
-
 
         const Data = {
             subjectSchemaRelation,

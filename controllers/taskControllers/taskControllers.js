@@ -55,6 +55,12 @@ const assigningTask = async (req, res) => {
             return res.status(404).json({ message: "SubjectSchemaRelation not found" });
         }
 
+        const taskDetails = await Task.findOne({ folderPath: folderPath });
+
+        if (taskDetails) {
+            return res.status(400).json({ message: "Task already exist on this folder" });
+        }
+
         // Resolve and validate folder path
         const absoluteFolderPath = path.resolve(rootFolder, '..', folderPath);
 
@@ -148,16 +154,15 @@ const assigningTask = async (req, res) => {
 };
 
 const updateAssignedTask = async (req, res) => {
-    const { userId, subjectSchemaRelationId, folderPath, status, taskName, className, subjectCode, currentFileIndex } = req.body;
+    const { userId, subjectSchemaRelationId, status, folderPath, taskName, className, subjectCode, currentFileIndex } = req.body;
     const { id } = req.params;
-    // Start a session
     const session = await mongoose.startSession();
 
     try {
         session.startTransaction();
 
         // Validate inputs
-        if (!userId || !subjectSchemaRelationId || !folderPath || !taskName || !className || !subjectCode || !currentFileIndex) {
+        if (!userId || !subjectSchemaRelationId || !taskName || !className || !subjectCode || !currentFileIndex) {
             return res.status(400).json({ message: "All fields are required" });
         }
 
@@ -220,7 +225,7 @@ const updateAssignedTask = async (req, res) => {
         existingTask.taskName = taskName || existingTask.taskName;
         existingTask.className = className || existingTask.className;
         existingTask.subjectCode = subjectCode || existingTask.subjectCode;
-        existingTask.folderPath = folderPath || existingTask.folderPath;
+        existingTask.folderPath = existingTask.folderPath;
         existingTask.currentFileIndex = currentFileIndex || existingTask.currentFileIndex;
 
         // Save the updated task with the session
@@ -413,6 +418,7 @@ const getAssignTaskById = async (req, res) => {
         const answerPdfDetails = await AnswerPdf.findOne({ taskId: task._id, answerPdfName: currentPdf });
         const answerPdfImages = await AnswerPdfImage.find({ answerPdfId: answerPdfDetails._id });
 
+
         // Respond with the updated task details, images, and folder path
         res.status(200).json({
             task,
@@ -561,7 +567,6 @@ const getQuestionDefinitionTaskId = async (req, res) => {
         res.status(500).json({ message: "Failed to fetch tasks", error: error.message });
     }
 };
-
 
 export {
     assigningTask,
