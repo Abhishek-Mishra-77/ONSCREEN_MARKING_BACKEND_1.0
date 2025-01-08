@@ -43,13 +43,7 @@ const assigningTask = async (req, res) => {
             return res.status(400).json({ message: "Invalid subjectSchemaRelationId." });
         }
 
-        // Check if user exists
-        const user = await User.findById(userId);
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
-        }
-
-        const isExistTask = await Task.findOne({ userId });
+        const isExistTask = await Task.findOne({ subjectSchemaRelationId });
         if (isExistTask) {
             return res.status(400).json({ message: "Task already exist" });
         }

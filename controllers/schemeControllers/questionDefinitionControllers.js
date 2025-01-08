@@ -278,7 +278,7 @@ const getAllPrimaryQuestionBasedOnSchemeId = async (req, res) => {
         });
 
         if (primaryQuestions.length === 0) {
-            return res.status(404).json({ message: "No primary questions found for the given schemaId." });
+            return res.status(200).json({ message: "No primary questions found for the given schemaId.", data: [] });
         }
 
         return res.status(200).json({
