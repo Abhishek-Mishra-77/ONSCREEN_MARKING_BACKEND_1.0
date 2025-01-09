@@ -280,10 +280,6 @@ router.get('/:id', authMiddleware, getUserById);
  *                     type: string
  */
 router.get('/', authMiddleware, getAllUsers);
-
-
-
-
-
+    
 
 export default router;

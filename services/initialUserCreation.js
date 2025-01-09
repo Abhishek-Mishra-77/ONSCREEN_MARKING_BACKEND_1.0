@@ -29,7 +29,8 @@ async function createInitialUser() {
                     "Upload CSV File",
                     "Schema",
                     "Create Schema",
-                    "Schema Structure"
+                    "Schema Structure",
+                    "Tasks"
                 ]
             });
 
