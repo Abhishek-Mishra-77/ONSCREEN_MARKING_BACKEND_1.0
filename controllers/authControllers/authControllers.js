@@ -6,7 +6,6 @@ import jwt from "jsonwebtoken";
 import { isValidObjectId } from '../../services/mongoIdValidation.js';
 import mongoose from 'mongoose';
 
-
 /* -------------------------------------------------------------------------- */
 /*                           USER CREATION                                    */
 /* -------------------------------------------------------------------------- */

@@ -331,7 +331,6 @@ const removeAssignedTask = async (req, res) => {
         res.status(500).json({ message: "Failed to delete task", error: error.message });
     }
 };
-
 const getAssignTaskById = async (req, res) => {
     const { id } = req.params;
 
@@ -341,10 +340,12 @@ const getAssignTaskById = async (req, res) => {
         }
 
         const task = await Task.findById(id);
+
         if (!task) {
             return res.status(404).json({ message: "Task not found" });
         }
 
+        // Retrieve related details
         const subjectSchemaRelationDetails = await SubjectSchemaRelation.findById(task.subjectSchemaRelationId);
         if (!subjectSchemaRelationDetails) {
             return res.status(404).json({ message: "SubjectSchemaRelation not found" });
@@ -356,12 +357,16 @@ const getAssignTaskById = async (req, res) => {
         }
 
         const { folderPath, currentFileIndex, totalFiles } = task;
+
+        // Validate currentFileIndex
         if (currentFileIndex < 1 || currentFileIndex > totalFiles) {
             return res.status(400).json({ message: "Invalid current file index." });
         }
 
         const pdfFolderPath = path.resolve(folderPath);
         const pdfFiles = fs.readdirSync(pdfFolderPath).filter(file => file.endsWith(".pdf"));
+
+        // Ensure currentFileIndex is within the range of available PDFs
         if (currentFileIndex > pdfFiles.length) {
             return res.status(404).json({ message: "PDF file not found for the current index." });
         }
@@ -371,40 +376,29 @@ const getAssignTaskById = async (req, res) => {
         const extractedPdfFolder = path.join(extractedFolderPath, path.basename(currentPdf, ".pdf"));
 
         let allImages = [];
-        let answerPdfDetails = await AnswerPdf.findOne({ taskId: task._id, answerPdfName: currentPdf });
-
+        // If extracted folder doesn't exist, create it and extract images from the PDF
         if (!fs.existsSync(extractedPdfFolder)) {
             fs.mkdirSync(extractedPdfFolder, { recursive: true });
             const pdfPath = path.join(pdfFolderPath, currentPdf);
             allImages = await extractImagesFromPdf(pdfPath, extractedPdfFolder);
 
-            if (!answerPdfDetails) {
+            // Save the extraction details in the AnswerPdf model
+            const existingAnswerPdf = await AnswerPdf.findOne({ taskId: task._id, answerPdfName: currentPdf });
+            let answerPdfDetails;
+
+            if (!existingAnswerPdf) {
                 answerPdfDetails = await AnswerPdf.create({
                     taskId: task._id,
                     totalImages: allImages.length,
                     answerPdfName: currentPdf,
                 });
             } else {
-                // Update the total images in case of re-extraction
-                answerPdfDetails.totalImages = allImages.length;
-                await answerPdfDetails.save();
+                answerPdfDetails = existingAnswerPdf;
             }
 
-            // Save all images to the AnswerPdfImage collection
-            for (const imageName of allImages) {
-                const existingImage = await AnswerPdfImage.findOne({ answerPdfId: answerPdfDetails._id, name: imageName });
-                if (!existingImage) {
-                    await AnswerPdfImage.create({
-                        answerPdfId: answerPdfDetails._id,
-                        name: imageName,
-                        status: "notVisited",
-                    });
-                }
-            }
-        } else {
-            // Folder exists, ensure all images are in the database
-            const existingImages = fs.readdirSync(extractedPdfFolder).filter(file => /\.(jpg|jpeg|png)$/i.test(file));
-            for (const imageName of existingImages) {
+            // Save the images to the AnswerPdfImage collection
+            // Ensure we do not duplicate entries by checking if the image already exists
+            for (let imageName of allImages) {
                 const existingImage = await AnswerPdfImage.findOne({ answerPdfId: answerPdfDetails._id, name: imageName });
                 if (!existingImage) {
                     await AnswerPdfImage.create({
@@ -416,11 +410,17 @@ const getAssignTaskById = async (req, res) => {
             }
         }
 
+        // Dynamically generate the path to the extracted images folder based on task.folderPath
+        const extractedImagesFolder = path.join(task.folderPath, "extractedPdfImages", path.basename(currentPdf, ".pdf"));
+
+        // Retrieve the current AnswerPdf details and associated images
+        const answerPdfDetails = await AnswerPdf.findOne({ taskId: task._id, answerPdfName: currentPdf });
         const answerPdfImages = await AnswerPdfImage.find({ answerPdfId: answerPdfDetails._id });
 
+        // Respond with the updated task details, images, and folder path
         res.status(200).json({
             task,
-            extractedImagesFolder: path.join(task.folderPath, "extractedPdfImages", path.basename(currentPdf, ".pdf")),
+            extractedImagesFolder: extractedImagesFolder,
             answerPdfDetails,
             answerPdfImages,
             schemaDetails,

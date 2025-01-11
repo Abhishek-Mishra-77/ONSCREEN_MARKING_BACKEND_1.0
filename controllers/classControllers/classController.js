@@ -2,7 +2,6 @@ import Course from "../../models/classModel/classModel.js";
 import Subjects from "../../models/classModel/subjectModel.js"
 import { isValidObjectId } from "../../services/mongoIdValidation.js";
 
-
 /* -------------------------------------------------------------------------- */
 /*                           VALIDATE COURSE DATA                             */
 /* -------------------------------------------------------------------------- */
