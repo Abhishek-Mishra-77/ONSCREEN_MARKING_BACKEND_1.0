@@ -42,6 +42,10 @@ const iconSchema = new mongoose.Schema({
     mark: {
         type: String,
         required: true
+    },
+    comment: {
+        type: String,
+        default: ""
     }
 });
 

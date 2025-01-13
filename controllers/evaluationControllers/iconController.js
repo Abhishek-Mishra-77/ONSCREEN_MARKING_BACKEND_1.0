@@ -15,7 +15,8 @@ const createIconHandler = async (req, res) => {
         y,
         width,
         height,
-        mark
+        mark,
+        comment
     } = req.body;
 
     const session = await mongoose.startSession();
@@ -65,7 +66,8 @@ const createIconHandler = async (req, res) => {
             y,
             width,
             height,
-            mark: mark ? mark : 0
+            mark: mark ? mark : 0,
+            comment: comment ? comment : ""
         });
 
         if (!icon) {
@@ -97,7 +99,7 @@ const createIconHandler = async (req, res) => {
 };
 
 const updateIconHandler = async (req, res) => {
-    const { answerPdfImageId, questionDefinitionId, iconUrl, question, timeStamps, x, y, width, height, mark } = req.body;
+    const { answerPdfImageId, questionDefinitionId, iconUrl, question, timeStamps, x, y, width, height, mark, comment } = req.body;
     const { id } = req.params;
 
     try {
@@ -112,7 +114,7 @@ const updateIconHandler = async (req, res) => {
             return res.status(400).json({ message: "All fields are required." });
         }
 
-        const updatedIcon = await Icon.findByIdAndUpdate(id, { answerPdfImageId, questionDefinitionId, iconUrl, question, timeStamps, x, y, width, height, mark }, { new: true });
+        const updatedIcon = await Icon.findByIdAndUpdate(id, { answerPdfImageId, questionDefinitionId, iconUrl, question, timeStamps, x, y, width, comment, height, mark }, { new: true });
 
         if (!updatedIcon) {
             return res.status(404).json({ message: "Icon not found." });
