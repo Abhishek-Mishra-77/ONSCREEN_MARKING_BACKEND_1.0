@@ -119,7 +119,6 @@ const userLogin = async (req, res) => {
     }
 };
 
-
 /* -------------------------------------------------------------------------- */
 /*                           OTP VERIFICATION                                 */
 /* -------------------------------------------------------------------------- */
@@ -210,7 +209,6 @@ const forgotPassword = async (req, res) => {
         res.status(500).json({ message: "Failed to reset password", error: error.message });
     }
 }
-
 
 /* -------------------------------------------------------------------------- */
 /*                           REMOVE USER BY ID                                */

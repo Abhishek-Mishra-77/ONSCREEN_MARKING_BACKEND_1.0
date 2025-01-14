@@ -5,6 +5,8 @@ import path from "path";
 import { fileURLToPath } from "url";
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpecs from "./services/swagger.js";
+import { Server } from "socket.io";
+import http from "http";
 
 
 import database from "./utils/database.js";
@@ -22,6 +24,7 @@ import syncfusionController from "./controllers/syncfusionController/sycnfusionC
 import answerPdfImageRoutes from './routes/evaluationRoutes/answerPdfImageRoutes.js'
 import marksRoutes from './routes/evaluationRoutes/marksRoutes.js';
 import iconRoutes from './routes/evaluationRoutes/iconRoutes.js'
+import { subjectFolderWatcher } from "./controllers/studentControllers/subjectFolder.js";
 
 
 /* -------------------------------------------------------------------------- */
@@ -30,15 +33,21 @@ import iconRoutes from './routes/evaluationRoutes/iconRoutes.js'
 
 
 // For handling file uploads
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 dotenv.config();
 const app = express();
+const server = http.createServer(app);
+export const io = new Server(server);
 const PORT = process.env.PORT || 5000;
 app.use(express.json());
 app.use(cors());
+
+
+// Watcher setup for real-time updates
+subjectFolderWatcher(io);
+
 
 // Serve Swagger docs
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
@@ -62,6 +71,14 @@ app.use("/api/syncfusion", syncfusionController)
 app.use("/api/evaluation/answerimages", answerPdfImageRoutes)
 app.use("/api/evaluation/marks", marksRoutes)
 app.use("/api/evaluation/icons", iconRoutes)
+
+// Socket.IO Connection event
+io.on('connection', (socket) => {
+    console.log("A client connected");
+    socket.on('disconnect', () => {
+        console.log("A client disconnected");
+    });
+});
 
 
 /* -------------------------------------------------------------------------- */
