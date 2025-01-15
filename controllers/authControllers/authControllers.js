@@ -11,7 +11,7 @@ import mongoose from 'mongoose';
 /* -------------------------------------------------------------------------- */
 
 const createUser = async (req, res) => {
-    const { name, email, password, mobile, role, permissions } = req.body;
+    const { name, email, password, mobile, role, permissions, subjectCode, maxBooklets } = req.body;
 
     if (!name || !email || !password || !mobile || !role || !permissions) {
         return res.status(400).json({ message: "All fields are required" });
@@ -21,6 +21,12 @@ const createUser = async (req, res) => {
 
     if (existingUser) {
         return res.status(409).json({ message: "User already exists" });
+    }
+
+    if (role === "evaluator") {
+        if (!subjectCode || !maxBooklets) {
+            return res.status(400).json({ message: "Subject code and max booklets are required for evaluator role" });
+        }
     }
 
     const session = await mongoose.startSession();
@@ -37,7 +43,9 @@ const createUser = async (req, res) => {
             password: hashedPassword,
             mobile,
             role,
-            permissions
+            permissions,
+            subjectCode,
+            maxBooklets
         });
         await newUser.save();
 
@@ -279,14 +287,27 @@ const getAllUsers = async (req, res) => {
 
 const updateUserDetails = async (req, res) => {
     const { id } = req.params;
-    const { name, email, mobile, role, permissions } = req.body;
+    const { name, email, mobile, role, permissions, storeCode, maxBooklets } = req.body;
     try {
 
         if (!isValidObjectId(id)) {
             return res.status(400).json({ message: "Invalid user ID." });
         }
 
-        const user = await User.findByIdAndUpdate(id, { name, email, mobile, role, permissions });
+        const { name, email, password, mobile, role, permissions, subjectCode, maxBooklets } = req.body;
+
+        if (!name || !email || !password || !mobile || !role || !permissions) {
+            return res.status(400).json({ message: "All fields are required" });
+        }
+
+        if (role === "evaluator") {
+            if (!subjectCode || !maxBooklets) {
+                return res.status(400).json({ message: "Subject code and max booklets are required for evaluator role" });
+            }
+        }
+
+
+        const user = await User.findByIdAndUpdate(id, { name, email, mobile, role, permissions, storeCode, maxBooklets }, { new: true });
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
@@ -295,7 +316,6 @@ const updateUserDetails = async (req, res) => {
         console.error("Error updating user details:", error);
         res.status(500).json({ message: "Failed to update user details", error: error.message });
     }
-
 }
 
 /* -------------------------------------------------------------------------- */
@@ -314,7 +334,7 @@ const createUsersByCsvFile = async (req, res) => {
 
         // Iterate through each user from the CSV file
         for (const user of users) {
-            const { name, email, password, mobile, role, permissions, ...otherFields } = user;
+            const { name, email, password, mobile, role, subjectCode, maxBooklets, permissions, ...otherFields } = user;
 
             // Validate required fields
             if (!name || !email || !password || !mobile || !role || !permissions) {
@@ -329,6 +349,12 @@ const createUsersByCsvFile = async (req, res) => {
                 continue; // Skip the user if email already exists
             }
 
+            if (role === "evaluator") {
+                if (!subjectCode || !maxBooklets) {
+                    failedUsers.push({ email, message: "Subject code and max booklets are required for evaluator role" });
+                }
+            }
+
             // Encrypt the password
             const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -339,6 +365,8 @@ const createUsersByCsvFile = async (req, res) => {
                 password: hashedPassword,
                 mobile,
                 role,
+                subjectCode,
+                maxBooklets,
                 permissions,
                 ...otherFields
             });

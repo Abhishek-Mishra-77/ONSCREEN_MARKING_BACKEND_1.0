@@ -26,6 +26,14 @@ const UserSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    subjectCode: {
+        type: [String],
+        require: false
+    },
+    maxBooklets: {
+        type: Number,
+        required: false
+    },
     permissions: {
         type: Array,
         default: []

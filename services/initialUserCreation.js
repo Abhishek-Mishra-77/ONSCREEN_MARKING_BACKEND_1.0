@@ -17,6 +17,8 @@ async function createInitialUser() {
                 password: hashedPassword,
                 mobile: "8577887978",
                 role: "admin",
+                subjectCode: [],
+                maxBooklets: 0,
                 permissions: [
                     "Dashboard",
                     "Evaluator Dashboard",
