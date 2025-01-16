@@ -10,6 +10,7 @@ import mongoose from 'mongoose';
 /*                           USER CREATION                                    */
 /* -------------------------------------------------------------------------- */
 
+
 const createUser = async (req, res) => {
     const { name, email, password, mobile, role, permissions, subjectCode, maxBooklets } = req.body;
 

@@ -1,118 +1,109 @@
 import chokidar from "chokidar";
 import path from "path";
-import subjectFolderCollection from "../../models/StudentModels/subjectFolderModel.js";
-import { fileURLToPath } from "url";
+import fs from "fs"; // For folder operations
+import SubjectFolderModel from "../../models/StudentModels/subjectFolderModel.js";
 import { io } from "../../server.js";
+import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const subjectFolderWatcher = () => {
-    const scannedDataPath = path.join(__dirname, "scannedData");
+    const scannedDataPath = path.join(__dirname, '..', '..', "scannedFolder");
 
-    console.log("Watching folder for changes: ", scannedDataPath);
+    if (!fs.existsSync(scannedDataPath)) {
+        console.log(`'scannedFolder' does not exist. Creating it at: ${scannedDataPath}`);
+        fs.mkdirSync(scannedDataPath, { recursive: true });
+    } else {
+        console.log(`'scannedFolder' exists at: ${scannedDataPath}`);
+    }
+
+    console.log("Initializing watcher for scannedDataPath:", scannedDataPath);
 
     // File watcher setup
     const watcher = chokidar.watch(scannedDataPath, {
         ignored: /(^|[\/\\])\../, // Ignore dotfiles
         persistent: true,
-        depth: 3, // Ensure we are watching subfolders up to 3 levels deep
+        depth: 1, // Watch only the first level of subfolders
     });
 
-    console.log(watcher + " WATCHER")
+    // Helper function to count PDFs in a folder
+    const countPdfsInFolder = (folderPath) => {
+        const files = fs.readdirSync(folderPath);
+        return files.filter(file => file.endsWith(".pdf")).length;
+    };
+
+    // Function to handle folder updates or creation
+    const updateOrCreateFolderInDatabase = async (folderName, folderPath) => {
+        try {
+            const totalPdfs = countPdfsInFolder(folderPath);
+
+            // If there are no PDFs, don't create or update the folder in the database
+            if (totalPdfs === 0) {
+                console.log(`No PDFs found in folder: ${folderName}. Skipping database update.`);
+                return;
+            }
+
+            // Use findOneAndUpdate to ensure uniqueness and atomicity
+            const updatedFolder = await SubjectFolderModel.findOneAndUpdate(
+                { folderName },
+                {
+                    $set: {
+                        description: "new",
+                        allocated: 0,
+                        evaluated: 0,
+                        evaluation_pending: 0,
+                        totalAllocations: 0,
+                        unAllocated: totalPdfs,
+                        updatedAt: new Date(),
+                    },
+                    $setOnInsert: {
+                        createdAt: new Date(),
+                    },
+                    totalStudentPdfs: totalPdfs,
+                },
+                { upsert: true, new: true }
+            );
+
+            // Emit real-time event to clients via Socket.IO
+            io.emit(updatedFolder.isNew ? "folder-add" : "folder-update", updatedFolder);
+        } catch (error) {
+            console.error(`Error handling folder in database: ${error.message}`);
+        }
+    };
 
     // File addition event
     watcher.on("add", async (filePath) => {
         const parsedPath = path.parse(filePath);
-        const folderName = parsedPath.dir.split(path.sep).pop();  // Get the folder name from path
-        const fileName = parsedPath.base;  // Get file name from parsed path
+        const folderName = parsedPath.dir.split(path.sep).pop();
+        const fileName = parsedPath.base;
 
-        console.log(`File added: ${filePath}`);
-        console.log(`Parsed Path: ${parsedPath.dir}, Folder Name: ${folderName}`);
+        // Only add PDFs from subfolders (not the root scannedFolder)
+        if (fileName.endsWith(".pdf") && folderName !== "scannedFolder") {
+            const folderPath = path.join(scannedDataPath, folderName);
 
-        if (fileName.endsWith(".pdf")) {
-            console.log(`PDF detected: ${filePath}`);
-
-            // Extract student ID and subject code from the file name (format: studentId_subjectCode.pdf)
-            const [studentId, subjectCode] = fileName.split("_");
-
-            // Ensure folder name matches the subject code (without file extension)
-            if (folderName === subjectCode.split(".")[0]) {
-                console.log(`Folder name matches the subject code: ${folderName}`);
-
-                try {
-                    // Check if the folder exists in the database
-                    const folder = await subjectFolderCollection.findOne({ folderName });
-
-                    if (folder) {
-                        // Folder exists, update the document
-                        await subjectFolderCollection.updateOne(
-                            { folderName },
-                            {
-                                $inc: { totalStudentPdfs: 1, unAllocated: 1 },  // Increment counts
-                                $set: { updatedAt: new Date() }  // Set the updatedAt timestamp
-                            }
-                        );
-                        console.log(`Database updated for folder: ${folderName}`);
-
-                        // Emit a real-time update event to clients via Socket.IO
-                        io.emit("folder-update", { folderName, fileName });
-                    } else {
-                        // Folder doesn't exist in the database, create a new entry
-                        const newFolder = {
-                            folderName,
-                            totalStudentPdfs: 1,
-                            description: "",
-                            allocated: 0,
-                            unAllocated: 1,
-                            evaluated: 0,
-                            evaluation_pending: 0,
-                            totalAllocation: 0,
-                        };
-                        await subjectFolderCollection.insertOne(newFolder);
-                        console.log(`New folder created in database: ${folderName}`);
-
-                        // Emit a real-time add event to clients via Socket.IO
-                        io.emit("folder-add", newFolder);
-                    }
-                } catch (error) {
-                    console.error(`Error updating folder in database: ${error.message}`);
-                }
-            } else {
-                console.log(`Folder name (${folderName}) doesn't match the subject code (${subjectCode})`);
-            }
+            // Update or create the folder in the database
+            await updateOrCreateFolderInDatabase(folderName, folderPath);
         }
     });
 
-    // Folder addition event (new folder created in scannedData)
+    // Folder addition event
     watcher.on("addDir", async (folderPath) => {
-        const folderName = path.basename(folderPath);
-        console.log(`Folder detected: ${folderName}`);
+        const folderName = path.basename(folderPath); // Extract folder name
 
-        try {
-            // Check if folder exists in the database
-            const folderExists = await subjectFolderCollection.findOne({ folderName });
+        // Skip the root 'scannedFolder' itself
+        if (folderName !== "scannedFolder") {
+            const folderFiles = fs.readdirSync(folderPath);
 
-            if (!folderExists) {
-                // Folder doesn't exist in the database, create a new entry
-                const newFolder = {
-                    folderName,
-                    totalStudentPdfs: 0,
-                    description: "",
-                    allocated: 0,
-                    unAllocated: 0,
-                    evaluated: 0,
-                    evaluation_pending: 0,
-                    totalAllocation: 0,
-                };
-                await subjectFolderCollection.insertOne(newFolder);
-                console.log(`New folder added to database: ${folderName}`);
+            // Check if the folder contains PDF files and not subfolders
+            const hasPdfFiles = folderFiles.some(file => file.endsWith(".pdf"));
 
-                // Emit a real-time add event to clients via Socket.IO
-                io.emit("folder-add", newFolder);
+            // Only track folders containing PDFs
+            if (hasPdfFiles) {
+                await updateOrCreateFolderInDatabase(folderName, folderPath);
+            } else {
+                console.log(`Folder ${folderName} contains no PDFs or only subfolders. Skipping database update.`);
             }
-        } catch (error) {
-            console.error(`Error adding new folder to database: ${error.message}`);
         }
     });
 
@@ -122,4 +113,4 @@ const subjectFolderWatcher = () => {
     });
 };
 
-export { subjectFolderWatcher }
+export { subjectFolderWatcher };

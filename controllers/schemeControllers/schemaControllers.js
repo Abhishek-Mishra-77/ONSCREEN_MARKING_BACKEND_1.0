@@ -5,10 +5,10 @@ import QuestionDefinition from "../../models/schemeModel/questionDefinitionSchem
 /*                           CREATE SCHEMA                                    */
 /* -------------------------------------------------------------------------- */
 const createSchema = async (req, res) => {
-    const { name, totalQuestions, maxMarks, minMarks, compulsoryQuestions, evaluationTime, isActive } = req.body;
+    const { name, totalQuestions, maxMarks, minMarks, compulsoryQuestions, evaluationTime, isActive, numberOfPage, hiddenPage } = req.body;
 
     try {
-        if (!name || !totalQuestions || !maxMarks || !minMarks || !evaluationTime) {
+        if (!name || !totalQuestions || !maxMarks || !minMarks || !evaluationTime || !numberOfPage || !hiddenPage) {
             return res.status(400).json({ message: "All fields are required" });
         }
 
@@ -37,6 +37,8 @@ const createSchema = async (req, res) => {
             minMarks,
             compulsoryQuestions,
             evaluationTime,
+            numberOfPage,
+            hiddenPage,
             isActive,
             status: false
         });
@@ -55,11 +57,11 @@ const createSchema = async (req, res) => {
 
 const updateSchema = async (req, res) => {
     const { id } = req.params;
-    const { name, totalQuestions, maxMarks, minMarks, compulsoryQuestions, evaluationTime, status, isActive } = req.body;
+    const { name, totalQuestions, maxMarks, minMarks, compulsoryQuestions, evaluationTime, status, isActive, numberOfPage, hiddenPage } = req.body;
 
     try {
         // Check if all required fields are present
-        if (!name || !totalQuestions || !maxMarks || !minMarks || !evaluationTime) {
+        if (!name || !totalQuestions || !maxMarks || !minMarks || !evaluationTime || !numberOfPage || !hiddenPage) {
             return res.status(400).json({ message: "All fields are required" });
         }
 
@@ -96,6 +98,8 @@ const updateSchema = async (req, res) => {
         schema.compulsoryQuestions = compulsoryQuestions;
         schema.evaluationTime = evaluationTime;
         schema.isActive = isActive;
+        schema.numberOfPage = numberOfPage;
+        schema.hiddenPage = hiddenPage;
         schema.status = status
 
         const updatedSchema = await schema.save();

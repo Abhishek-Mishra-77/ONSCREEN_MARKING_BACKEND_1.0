@@ -40,6 +40,14 @@ const schemaSchema = new mongoose.Schema({
         required: true,
         min: [1, "Evaluation time must be at least 1."]
     },
+    numberOfPage: {
+        type: Number,
+        require: true
+    },
+    hiddenPage: {
+        type: [String],
+        required: true
+    },
     isActive: {
         type: Boolean,
         default: true,
