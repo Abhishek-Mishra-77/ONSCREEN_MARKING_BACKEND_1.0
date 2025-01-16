@@ -25,6 +25,7 @@ import answerPdfImageRoutes from './routes/evaluationRoutes/answerPdfImageRoutes
 import marksRoutes from './routes/evaluationRoutes/marksRoutes.js';
 import iconRoutes from './routes/evaluationRoutes/iconRoutes.js'
 import { subjectFolderWatcher } from "./controllers/studentControllers/subjectFolder.js";
+import studentAnswerBookletRoutes from './routes/studentRoutes/studentAnswerBookletRoutes.js';
 
 
 /* -------------------------------------------------------------------------- */
@@ -71,6 +72,7 @@ app.use("/api/syncfusion", syncfusionController)
 app.use("/api/evaluation/answerimages", answerPdfImageRoutes)
 app.use("/api/evaluation/marks", marksRoutes)
 app.use("/api/evaluation/icons", iconRoutes)
+app.use('/api/student/answerbooklet', studentAnswerBookletRoutes)
 
 // Socket.IO Connection event
 io.on('connection', (socket) => {
