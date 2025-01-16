@@ -1,6 +1,6 @@
 import chokidar from "chokidar";
 import path from "path";
-import fs from "fs"; // For folder operations
+import fs from "fs";
 import SubjectFolderModel from "../../models/StudentModels/subjectFolderModel.js";
 import { io } from "../../server.js";
 import { fileURLToPath } from "url";
@@ -22,9 +22,9 @@ const subjectFolderWatcher = () => {
 
     // File watcher setup
     const watcher = chokidar.watch(scannedDataPath, {
-        ignored: /(^|[\/\\])\../, // Ignore dotfiles
+        ignored: /(^|[\/\\])\../,
         persistent: true,
-        depth: 1, // Watch only the first level of subfolders
+        depth: 1,
     });
 
     // Helper function to count PDFs in a folder
@@ -44,29 +44,38 @@ const subjectFolderWatcher = () => {
                 return;
             }
 
+            // Check if the folder already exists
+            const existingFolder = await SubjectFolderModel.findOne({ folderName });
+
+            let unAllocated = totalPdfs;
+            if (existingFolder) {
+                // Calculate the new unAllocated value
+                unAllocated = totalPdfs - existingFolder.totalStudentPdfs + existingFolder.unAllocated;
+                unAllocated = Math.max(unAllocated, 0); // Ensure unAllocated doesn't go negative
+            }
+
             // Use findOneAndUpdate to ensure uniqueness and atomicity
             const updatedFolder = await SubjectFolderModel.findOneAndUpdate(
                 { folderName },
                 {
                     $set: {
+                        totalStudentPdfs: totalPdfs,
+                        unAllocated: unAllocated,
+                        updatedAt: new Date(),
+                    },
+                    $setOnInsert: {
                         description: "new",
                         allocated: 0,
                         evaluated: 0,
                         evaluation_pending: 0,
                         totalAllocations: 0,
-                        unAllocated: totalPdfs,
-                        updatedAt: new Date(),
-                    },
-                    $setOnInsert: {
                         createdAt: new Date(),
                     },
-                    totalStudentPdfs: totalPdfs,
                 },
                 { upsert: true, new: true }
             );
 
-            // Emit real-time event to clients via Socket.IO
-            io.emit(updatedFolder.isNew ? "folder-add" : "folder-update", updatedFolder);
+            io.emit(existingFolder ? "folder-update" : "folder-add", updatedFolder);
         } catch (error) {
             console.error(`Error handling folder in database: ${error.message}`);
         }
@@ -78,7 +87,6 @@ const subjectFolderWatcher = () => {
         const folderName = parsedPath.dir.split(path.sep).pop();
         const fileName = parsedPath.base;
 
-        // Only add PDFs from subfolders (not the root scannedFolder)
         if (fileName.endsWith(".pdf") && folderName !== "scannedFolder") {
             const folderPath = path.join(scannedDataPath, folderName);
 
@@ -89,7 +97,7 @@ const subjectFolderWatcher = () => {
 
     // Folder addition event
     watcher.on("addDir", async (folderPath) => {
-        const folderName = path.basename(folderPath); // Extract folder name
+        const folderName = path.basename(folderPath);
 
         // Skip the root 'scannedFolder' itself
         if (folderName !== "scannedFolder") {
