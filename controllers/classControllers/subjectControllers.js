@@ -7,29 +7,43 @@ import { isValidObjectId } from "../../services/mongoIdValidation.js";
 /* -------------------------------------------------------------------------- */
 const createSubject = async (req, res) => {
     const { name, code, classId } = req.body;
+
     if (!name || !code || !classId) {
-        return res.status(400).json({ message: "All fields are required" });
+        return res.status(400).json({ message: "All fields are required." });
     }
 
     try {
-
         if (!isValidObjectId(classId)) {
             return res.status(400).json({ message: "Invalid class ID." });
         }
 
+        // Check if a subject with the same code exists in the same class (case-insensitive)
+        const existingSubject = await Subject.findOne({
+            classId,
+            code: new RegExp(`^${code}$`, 'i') // Case-insensitive search
+        });
+
+        if (existingSubject) {
+            return res.status(400).json({
+                message: `Subject code '${code}' already exists in this class.`
+            });
+        }
+
+        // Create and save the new subject
         const newSubject = new Subject({
             name,
             code,
             classId
         });
         const savedSubject = await newSubject.save();
-        return res.status(201).json(savedSubject);
 
+        return res.status(201).json(savedSubject);
     } catch (err) {
         console.error(err);
         return res.status(500).json({ message: "An error occurred while creating the subject." });
     }
 };
+
 
 
 /* -------------------------------------------------------------------------- */
@@ -95,24 +109,52 @@ const getAllSubjects = async (req, res) => {
 /* -------------------------------------------------------------------------- */
 const updateSubject = async (req, res) => {
     const { id } = req.params;
-    const { name, code } = req.body;
+    const { name, code, classId } = req.body;
+
+    if (!name || !code || !classId) {
+        return res.status(400).json({ message: "All fields are required." });
+    }
+
     try {
-
-
         if (!isValidObjectId(id)) {
             return res.status(400).json({ message: "Invalid subject ID." });
         }
 
-        const subject = await Subject.findByIdAndUpdate(id, { name, code }, { new: true });
+        if (!isValidObjectId(classId)) {
+            return res.status(400).json({ message: "Invalid class ID." });
+        }
+
+        // Check if a subject with the same code exists in the same class (case-insensitive) and is not the current subject
+        const existingSubject = await Subject.findOne({
+            classId,
+            code: new RegExp(`^${code}$`, 'i'),
+            _id: { $ne: id }
+        });
+
+        if (existingSubject) {
+            return res.status(400).json({
+                message: `Subject code '${code}' already exists in this class.`
+            });
+        }
+
+        // Find and update the subject
+        const subject = await Subject.findByIdAndUpdate(
+            id,
+            { name, code },
+            { new: true }
+        );
+
         if (!subject) {
             return res.status(404).json({ message: "Subject not found." });
         }
+
         return res.status(200).json(subject);
     } catch (error) {
         console.error(error);
         return res.status(500).json({ message: "An error occurred while updating the subject." });
     }
-}
+};
+
 
 /* -------------------------------------------------------------------------- */
 /*                           GET ALL SUBJECTS BY CLASS  ID                    */

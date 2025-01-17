@@ -76,15 +76,15 @@ const createCourse = async (req, res) => {
         return res.status(400).json({ error: validationError });
     }
 
-
-
     try {
+        const existingCourse = await Course.findOne({
+            classCode: new RegExp(`^${req.body.classCode}$`, 'i')
+        });
 
-
-        // Check if classCode already exists
-        const existingCourse = await Course.findOne({ classCode: req.body.classCode });
         if (existingCourse) {
-            return res.status(400).json({ error: 'Class code already exists.' });
+            return res.status(400).json({
+                error: `Class code '${req.body.classCode}' already exists.`
+            });
         }
 
         const newCourse = new Course(req.body);
@@ -96,6 +96,7 @@ const createCourse = async (req, res) => {
         return res.status(500).json({ error: 'An error occurred while creating the course.' });
     }
 };
+
 
 /* -------------------------------------------------------------------------- */
 /*                           UPDATE COURSE DETAILS                            */
@@ -111,7 +112,6 @@ const updateCourse = async (req, res) => {
     }
 
     try {
-
         if (!isValidObjectId(courseId)) {
             return res.status(400).json({ message: "Invalid class ID." });
         }
@@ -121,14 +121,27 @@ const updateCourse = async (req, res) => {
             return res.status(404).json({ error: 'Course not found.' });
         }
 
-        // Update or save the course
-        const updatedCourse = await saveOrUpdateCourse(courseData, course);
+        const existingCourse = await Course.findOne({
+            classCode: new RegExp(`^${courseData.classCode}$`, 'i'),
+            _id: { $ne: courseId }
+        });
+
+        if (existingCourse) {
+            return res.status(400).json({
+                error: `Class code '${courseData.classCode}' is already in use.`
+            });
+        }
+
+        Object.assign(course, courseData); // Update the fields with the new data
+        const updatedCourse = await course.save();
+
         return res.status(200).json(updatedCourse);
     } catch (err) {
         console.error(err);
         return res.status(500).json({ error: 'An error occurred while updating the course.' });
     }
 };
+
 
 /* -------------------------------------------------------------------------- */
 /*                           GET ALL COURSES                                  */
