@@ -77,7 +77,15 @@ const subjectFolderWatcher = () => {
         }
     };
 
-
+    // Function to handle folder removal from the database
+    const removeFolderFromDatabase = async (folderName) => {
+        try {
+            await SubjectFolderModel.deleteOne({ folderName });
+            io.emit("folder-remove", { folderName });
+        } catch (error) {
+            console.error(`Error removing folder ${folderName} from database: ${error.message}`);
+        }
+    };
 
     // Send the current state of folders to the frontend on connection
     io.on("connection", async (socket) => {
@@ -128,12 +136,32 @@ const subjectFolderWatcher = () => {
         }
     });
 
-    // Folder removal event
+    // File removal event: Track when PDFs are deleted
+    watcher.on("unlink", async (filePath) => {
+        const parsedPath = path.parse(filePath);
+        const folderName = parsedPath.dir.split(path.sep).pop();
+        const fileName = parsedPath.base;
+
+        // If a PDF is removed, update the folder information in the database
+        if (fileName.endsWith(".pdf") && folderName !== "scannedFolder") {
+            const folderPath = path.join(scannedDataPath, folderName);
+
+            // Update the folder information (decrement unAllocated)
+            await updateOrCreateFolderInDatabase(folderName, folderPath);
+        }
+    });
+
+    // Folder removal event: Remove folder if no PDFs remain
     watcher.on("unlinkDir", async (folderPath) => {
         const folderName = path.basename(folderPath);
 
         if (folderName !== "scannedFolder") {
-            await removeFolderFromDatabase(folderName);
+            const folderPath = path.join(scannedDataPath, folderName);
+            const totalPdfs = countPdfsInFolder(folderPath);
+
+            if (totalPdfs === 0) {
+                await removeFolderFromDatabase(folderName); // If no PDFs remain, remove from DB
+            }
         }
     });
 
