@@ -29,6 +29,8 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 uploadedPdfs/
 scannedData/
 scannedFolder/
+processedFolder/
+
 
 # Runtime data
 pids
