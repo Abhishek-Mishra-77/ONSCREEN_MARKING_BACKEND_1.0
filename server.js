@@ -12,6 +12,7 @@ import http from "http";
 import database from "./utils/database.js";
 import createInitialUser from "./services/initialUserCreation.js";
 
+
 import authRoutes from "./routes/authRoutes/authRoutes.js";
 import classRoutes from "./routes/classRoutes/classRoute.js";
 import subjectRoutes from "./routes/subjectRoutes/subjectRoute.js";
@@ -25,7 +26,7 @@ import answerPdfImageRoutes from './routes/evaluationRoutes/answerPdfImageRoutes
 import marksRoutes from './routes/evaluationRoutes/marksRoutes.js';
 import iconRoutes from './routes/evaluationRoutes/iconRoutes.js'
 import { subjectFolderWatcher } from "./controllers/studentControllers/subjectFolder.js";
-import studentAnswerBookletRoutes from './routes/studentRoutes/studentAnswerBookletRoutes.js';
+import bookletProcessingRoutes from "./routes/bookletProcessingRoutes/bookletProcessingRoutes.js";
 
 
 /* -------------------------------------------------------------------------- */
@@ -35,12 +36,18 @@ import studentAnswerBookletRoutes from './routes/studentRoutes/studentAnswerBook
 
 // For handling file uploads
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+export const __dirname = path.dirname(__filename);
 
 dotenv.config();
 const app = express();
 const server = http.createServer(app);
-export const io = new Server(server);
+
+export const io = new Server(server, {
+    cors: {
+        origin: "*",
+        methods: ["GET", "POST", "DELETE", "PUT"]
+    }
+});
 const PORT = process.env.PORT || 5000;
 app.use(express.json());
 app.use(cors());
@@ -72,7 +79,8 @@ app.use("/api/syncfusion", syncfusionController)
 app.use("/api/evaluation/answerimages", answerPdfImageRoutes)
 app.use("/api/evaluation/marks", marksRoutes)
 app.use("/api/evaluation/icons", iconRoutes)
-app.use('/api/student/answerbooklet', studentAnswerBookletRoutes)
+app.use('/api/bookletprocessing', bookletProcessingRoutes)
+
 
 // Socket.IO Connection event
 io.on('connection', (socket) => {
@@ -87,9 +95,7 @@ io.on('connection', (socket) => {
 /*                           SERVER AND DATABASE SETUP                        */
 /* -------------------------------------------------------------------------- */
 
-
-
-app.listen(PORT, async () => {
+server.listen(PORT, async () => {
     try {
         await database();
         await createInitialUser();

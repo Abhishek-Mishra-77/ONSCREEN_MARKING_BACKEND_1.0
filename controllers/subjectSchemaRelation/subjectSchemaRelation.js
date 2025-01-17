@@ -6,7 +6,8 @@ import CoordinateAllocation from "../../models/subjectSchemaRelationModel/coordi
 import Schema from "../../models/schemeModel/schema.js";
 import fs from 'fs';
 import path from 'path';
-import extractImagesFromPdf from "./extractingPdfImages.js";
+// import extractImagesFromPdf from "./extractingPdfImages.js";
+import extractImagesFromPdf from "../../services/extractImagesFromPdf.js"
 
 /* -------------------------------------------------------------------------- */
 /*                              CREATE SUBJECT SCHEMA RELATION                */

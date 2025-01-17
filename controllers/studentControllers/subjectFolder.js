@@ -3,13 +3,10 @@ import path from "path";
 import fs from "fs";
 import SubjectFolderModel from "../../models/StudentModels/subjectFolderModel.js";
 import { io } from "../../server.js";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { __dirname } from "../../server.js";
 
 const subjectFolderWatcher = () => {
-    const scannedDataPath = path.join(__dirname, '..', '..', "scannedFolder");
+    const scannedDataPath = path.join(__dirname, "scannedFolder");
 
     if (!fs.existsSync(scannedDataPath)) {
         console.log(`'scannedFolder' does not exist. Creating it at: ${scannedDataPath}`);
@@ -17,8 +14,6 @@ const subjectFolderWatcher = () => {
     } else {
         console.log(`'scannedFolder' exists at: ${scannedDataPath}`);
     }
-
-    console.log("Initializing watcher for scannedDataPath:", scannedDataPath);
 
     // File watcher setup
     const watcher = chokidar.watch(scannedDataPath, {
@@ -75,11 +70,29 @@ const subjectFolderWatcher = () => {
                 { upsert: true, new: true }
             );
 
+            // Emit the updated data to clients
             io.emit(existingFolder ? "folder-update" : "folder-add", updatedFolder);
         } catch (error) {
             console.error(`Error handling folder in database: ${error.message}`);
         }
     };
+
+
+
+    // Send the current state of folders to the frontend on connection
+    io.on("connection", async (socket) => {
+        console.log("A client connected:", socket.id);
+        try {
+            const folders = await SubjectFolderModel.find();
+            socket.emit("folder-list", folders);
+        } catch (error) {
+            console.error(`Error fetching folder list: ${error.message}`);
+        }
+
+        socket.on("disconnect", () => {
+            console.log("A client disconnected:", socket.id);
+        });
+    });
 
     // File addition event
     watcher.on("add", async (filePath) => {
@@ -112,6 +125,15 @@ const subjectFolderWatcher = () => {
             } else {
                 console.log(`Folder ${folderName} contains no PDFs or only subfolders. Skipping database update.`);
             }
+        }
+    });
+
+    // Folder removal event
+    watcher.on("unlinkDir", async (folderPath) => {
+        const folderName = path.basename(folderPath);
+
+        if (folderName !== "scannedFolder") {
+            await removeFolderFromDatabase(folderName);
         }
     });
 

@@ -288,36 +288,53 @@ const getAllUsers = async (req, res) => {
 
 const updateUserDetails = async (req, res) => {
     const { id } = req.params;
-    const { name, email, mobile, role, permissions, storeCode, maxBooklets } = req.body;
-    try {
+    const { name, mobile, role, permissions, subjectCode, maxBooklets } = req.body;
 
+    try {
+        // Validate the user ID format
         if (!isValidObjectId(id)) {
             return res.status(400).json({ message: "Invalid user ID." });
         }
 
-        const { name, email, password, mobile, role, permissions, subjectCode, maxBooklets } = req.body;
-
-        if (!name || !email || !password || !mobile || !role || !permissions) {
-            return res.status(400).json({ message: "All fields are required" });
+        // Check if required fields are provided
+        if (!name || !mobile || !role || !permissions) {
+            return res.status(400).json({ message: "Name, mobile, role, and permissions are required" });
         }
 
+        // If the role is 'evaluator', check if additional fields are provided
         if (role === "evaluator") {
             if (!subjectCode || !maxBooklets) {
                 return res.status(400).json({ message: "Subject code and max booklets are required for evaluator role" });
             }
         }
 
+        // Construct an update object, only including the fields that are provided
+        const updateData = {};
 
-        const user = await User.findByIdAndUpdate(id, { name, email, mobile, role, permissions, storeCode, maxBooklets }, { new: true });
+        // Add fields to the updateData object if they are provided in the request body
+        if (name) updateData.name = name;
+        if (mobile) updateData.mobile = mobile;
+        if (role) updateData.role = role;
+        if (permissions) updateData.permissions = permissions;
+        if (subjectCode) updateData.subjectCode = subjectCode;  // This is an array field
+        if (maxBooklets) updateData.maxBooklets = maxBooklets;
+
+        // Update the user in the database
+        const user = await User.findByIdAndUpdate(id, updateData, { new: true });
+
+        // If no user is found
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
-        res.status(200).json({ message: "User updated successfully" });
+
+        // Return success message
+        res.status(200).json({ message: "User updated successfully", user });
     } catch (error) {
         console.error("Error updating user details:", error);
         res.status(500).json({ message: "Failed to update user details", error: error.message });
     }
-}
+};
+
 
 /* -------------------------------------------------------------------------- */
 /*                           CREATE USERS BY CSV UPLOAD                       */
@@ -333,7 +350,6 @@ const createUsersByCsvFile = async (req, res) => {
         let successCount = 0;
         let failedUsers = [];
 
-        // Iterate through each user from the CSV file
         for (const user of users) {
             const { name, email, password, mobile, role, subjectCode, maxBooklets, permissions, ...otherFields } = user;
 

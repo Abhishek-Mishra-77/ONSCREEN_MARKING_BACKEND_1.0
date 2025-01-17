@@ -7,21 +7,16 @@ import SubjectSchemaRelation from "../../models/subjectSchemaRelationModel/subje
 import AnswerPdf from "../../models/EvaluationModels/studentAnswerPdf.js";
 import Schema from "../../models/schemeModel/schema.js";
 import QuestionDefinition from "../../models/schemeModel/questionDefinitionSchema.js";
-import { fileURLToPath } from 'url';
 import mongoose from 'mongoose';
 import { PDFDocument } from 'pdf-lib';
 import extractImagesFromPdf from "./extractImagesFromPDF.js";
 import AnswerPdfImage from "../../models/EvaluationModels/answerPdfImageModel.js";
 import Marks from "../../models/EvaluationModels/marksModel.js";
-
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const rootFolder = path.join(__dirname, '..', '..', process.env.BASE_DIR);
+import { __dirname } from "../../server.js";
 
 
 const assigningTask = async (req, res) => {
+    const rootFolder = path.join(__dirname, '..', '..', process.env.BASE_DIR);
     const { userId, subjectSchemaRelationId, folderPath, status, taskName, className, subjectCode } = req.body;
 
     // Start a session
