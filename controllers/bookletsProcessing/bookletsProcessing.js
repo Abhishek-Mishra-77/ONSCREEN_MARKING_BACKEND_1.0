@@ -1,11 +1,11 @@
 import fs from "fs";
 import path from "path";
-import extractImagesFromPdf from "../../services/extractImagesFromPdf.js";
+import extractingBooklets from "./extractingBooklets.js";
 import Subject from "../../models/classModel/subjectModel.js";
 import { io } from "../../server.js";
 import CourseSchemaRelation from "../../models/subjectSchemaRelationModel/subjectSchemaRelationModel.js";
 import Schema from "../../models/schemeModel/schema.js";
-import { PDFDocument } from "pdf-lib"; 
+import { PDFDocument } from "pdf-lib";
 import { __dirname } from "../../server.js";
 
 const processingBooklets = async (req, res) => {
@@ -18,7 +18,6 @@ const processingBooklets = async (req, res) => {
     try {
         const socketNamespace = io.of(`/processing-${subjectCode}`);
         socketNamespace.on("connection", async (socket) => {
-            console.log(`Client connected to /processing-${subjectCode}`);
             socket.emit("status", "Starting verification...");
 
             let schema;
@@ -47,7 +46,7 @@ const processingBooklets = async (req, res) => {
                 }
 
                 socket.emit("status", "Verification completed. Processing PDFs...");
-                await new Promise((resolve) => setTimeout(resolve, 3000)); // Simulate delay
+                await new Promise((resolve) => setTimeout(resolve, 3000));
             } catch (error) {
                 console.error("Verification error:", error.message);
                 socket.emit("error", "Verification failed. Terminating process.");
@@ -71,6 +70,7 @@ const processingBooklets = async (req, res) => {
             fs.mkdirSync(rejectedFolderPath, { recursive: true });
 
             const pdfFiles = fs.readdirSync(scannedDataPath).filter(file => file.endsWith(".pdf"));
+
             if (pdfFiles.length === 0) {
                 socket.emit("status", "No PDFs found in the scanned folder. Terminating process.");
                 socket.disconnect();
@@ -80,7 +80,7 @@ const processingBooklets = async (req, res) => {
             // Track already processed files
             const processedFiles = fs.readdirSync(processedFolderPath).map(file => file.replace(".pdf", ""));
             const rejectedFiles = fs.readdirSync(rejectedFolderPath).map(file => file.replace(".pdf", ""));
-            
+
             for (const pdfFile of pdfFiles) {
                 const pdfPath = path.join(scannedDataPath, pdfFile);
                 const pdfFileNameWithoutExt = path.basename(pdfFile, path.extname(pdfFile));
@@ -101,14 +101,16 @@ const processingBooklets = async (req, res) => {
                     const pdfDoc = await PDFDocument.load(pdfBytes);
                     const totalPages = pdfDoc.getPageCount();
 
+                    // Send total pages info to frontend
                     if (totalPages === schema.numberOfPage) {
                         const processedPdfPath = path.join(processedFolderPath, pdfFile);
                         fs.copyFileSync(pdfPath, processedPdfPath);
                         socket.emit("status", `Processed: ${pdfFile} (Pages: ${totalPages})`);
 
                         // Extract images for processed PDFs
-                        const outputDir = path.join(processedFolderPath, pdfFile.replace(".pdf", ""), "extractedImages");
-                        const imageCount = await extractImagesFromPdf(pdfPath, outputDir);
+                        const outputDir = path.join(processedFolderPath, pdfFile.replace(".pdf", ""));
+                        const imageCount = await extractingBooklets(pdfPath, outputDir);  // Use your existing function for extracting images
+
                         socket.emit("status", `Extracted ${imageCount} images from: ${pdfFile}`);
                     } else {
                         const rejectedPdfPath = path.join(rejectedFolderPath, pdfFile);
