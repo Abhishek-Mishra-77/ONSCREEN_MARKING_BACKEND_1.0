@@ -10,30 +10,8 @@ import CourseSchemaRelation from "../../models/subjectSchemaRelationModel/subjec
 import Schema from "../../models/schemeModel/schema.js";
 
 const processingBooklets = async (req, res) => {
-    const { subjectCode } = req.body;
-
-    if (!subjectCode) {
-        return res.status(400).json({ message: "Subject code is required." });
-    }
 
     try {
-        const subject = await Subject.findOne({ code: subjectCode });
-
-        if (!subject) {
-            return res.status(404).json({ message: "Subject not found for the given subject code." });
-        }
-
-        const courseSchemaDetails = await CourseSchemaRelation.findOne({ subjectId: subject._id });
-
-        if (!courseSchemaDetails) {
-            return res.status(404).json({ message: "Schema not found for the given subject code." });
-        }
-
-        const schema = await Schema.findOne({ _id: courseSchemaDetails.schemaId });
-
-        if (!schema) {
-            return res.status(404).json({ message: "Schema not found for the given subject code." });
-        }
 
         // Paths
         const scannedDataPath = path.join(__dirname, "scannedFolder", subjectCode);
@@ -84,12 +62,77 @@ const processingBooklets = async (req, res) => {
     }
 };
 
+const bookletsVerification = async (req, res) => {
+    const { subjectCode } = req.body;
+    try {
+        // Input validation
+        if (!subjectCode) {
+            return res.status(400).json({ message: "Subject code is required." });
+        }
 
-export { processingBooklets };
+        // Subject verification
+        const subject = await Subject.findOne({ code: subjectCode });
+        if (!subject) {
+            return res.status(404).json({ message: "Subject not found for the given subject code." });
+        }
 
+        // Course schema verification
+        const courseSchemaDetails = await CourseSchemaRelation.findOne({ subjectId: subject._id });
+        if (!courseSchemaDetails) {
+            return res.status(404).json({ message: "Schema not found for the given subject code." });
+        }
 
+        // Schema verification
+        const schema = await Schema.findOne({ _id: courseSchemaDetails.schemaId });
+        if (!schema) {
+            return res.status(404).json({ message: "Schema not found for the given subject code." });
+        }
 
+        // Paths for scanned and processed folders
+        const scannedDataPath = path.join(__dirname, "scannedFolder", subjectCode);
+        const processedFolderPath = path.join(__dirname, "processedFolder", subjectCode);
 
+        // Ensure scannedDataPath exists
+        if (!fs.existsSync(scannedDataPath)) {
+            return res.status(404).json({ message: "Folder not found for the given subject code." });
+        }
+
+        // Create processed folder if it does not exist
+        if (!fs.existsSync(processedFolderPath)) {
+            fs.mkdirSync(processedFolderPath, { recursive: true });
+            console.log(`Created processed folder for subject: ${processedFolderPath}`);
+        }
+
+        // Get all PDFs from scannedDataPath
+        const pdfFiles = fs.readdirSync(scannedDataPath).filter(file => file.endsWith('.pdf'));
+
+        if (pdfFiles.length === 0) {
+            return res.status(404).json({ message: "No PDFs found in the scanned folder." });
+        }
+
+        // Process and copy PDFs to the processed folder
+        pdfFiles.forEach(pdfFile => {
+            const sourcePath = path.join(scannedDataPath, pdfFile);
+            const destinationPath = path.join(processedFolderPath, pdfFile);
+
+            // Copy or overwrite PDF in the processed folder
+            fs.copyFileSync(sourcePath, destinationPath);
+            console.log(`Processed file: ${pdfFile}`);
+        });
+
+        // Respond with the list of processed files
+        res.status(200).json({
+            message: "Booklet verification and PDF processing successful.",
+            verified: true,
+            processedFiles: pdfFiles,
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+};
+
+export { processingBooklets, bookletsVerification };
 
 // import fs from "fs";
 // import path from "path";
