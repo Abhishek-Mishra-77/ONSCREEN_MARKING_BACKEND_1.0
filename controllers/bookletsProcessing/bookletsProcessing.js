@@ -1,6 +1,5 @@
 import fs from "fs";
 import path from "path";
-import extractingBooklets from "./extractingBooklets.js";
 import Subject from "../../models/classModel/subjectModel.js";
 import { io } from "../../server.js";
 import CourseSchemaRelation from "../../models/subjectSchemaRelationModel/subjectSchemaRelationModel.js";
@@ -105,18 +104,12 @@ const processingBooklets = async (req, res) => {
                     if (totalPages === schema.numberOfPage) {
                         const processedPdfPath = path.join(processedFolderPath, pdfFile);
                         fs.copyFileSync(pdfPath, processedPdfPath);
-                        socket.emit("status", `Processed: ${pdfFile} (Pages: ${totalPages})`);
-
-                        // Extract images for processed PDFs
-                        const outputDir = path.join(processedFolderPath, pdfFile.replace(".pdf", ""));
-                        const imageCount = await extractingBooklets(pdfPath, outputDir);  // Use your existing function for extracting images
-
-                        socket.emit("status", `Extracted ${imageCount} images from: ${pdfFile}`);
+                        socket.emit("status", `Processed: ${pdfFile} Pages: ${totalPages}`);
                     } else {
                         const rejectedPdfPath = path.join(rejectedFolderPath, pdfFile);
                         fs.mkdirSync(path.dirname(rejectedPdfPath), { recursive: true });
                         fs.copyFileSync(pdfPath, rejectedPdfPath);
-                        socket.emit("status", `Rejected: ${pdfFile} (Pages: ${totalPages})`);
+                        socket.emit("status", `Rejected: ${pdfFile} Pages: ${totalPages}`);
                     }
                 } catch (error) {
                     console.error(`Error processing ${pdfFile}:`, error.message);
@@ -137,4 +130,89 @@ const processingBooklets = async (req, res) => {
     }
 };
 
-export { processingBooklets };
+const servingBooklets = async (req, res) => {
+    const { subjectCode, bookletName } = req.query;
+
+    if (!subjectCode || !bookletName) {
+        return res.status(400).json({ message: "Subject code and PDF name are required." });
+    }
+
+    // Construct the file path
+    const pdfPath = path.join(__dirname, 'scannedFolder', subjectCode, bookletName);
+
+    // Check if the file exists
+    if (!fs.existsSync(pdfPath)) {
+        return res.status(404).json({ message: `PDF not found: ${bookletName}` });
+    }
+
+    // Set the response headers for PDF content
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="${bookletName}"`);
+
+    // Create a read stream and pipe it to the response to send the PDF file
+    const fileStream = fs.createReadStream(pdfPath);
+    fileStream.pipe(res);
+
+    fileStream.on('error', (error) => {
+        console.error('Error sending PDF file:', error);
+        res.status(500).json({ message: "Failed to send PDF" });
+    });
+}
+
+const removeRejectedBooklets = async (req, res) => {
+    const { subjectCode } = req.query;
+
+    if (!subjectCode) {
+        return res.status(400).json({ message: "Subject code is required." });
+    }
+
+    try {
+        // Define paths for the folders
+        const scannedDataPath = path.join(__dirname, "scannedFolder", subjectCode);
+        const rejectedFolderPath = path.join(__dirname, "rejectedBookletsFolder", subjectCode);
+
+        // Check if the rejected folder exists for the given subject code
+        if (!fs.existsSync(rejectedFolderPath)) {
+            return res.status(404).json({ message: "Rejected folder not found." });
+        }
+
+        // Get the list of rejected booklets (PDFs)
+        const rejectedFiles = fs.readdirSync(rejectedFolderPath).filter(file => file.endsWith(".pdf"));
+
+        if (rejectedFiles.length === 0) {
+            return res.status(404).json({ message: "No rejected booklets found." });
+        }
+
+        // Ensure the scanned folder exists
+        if (!fs.existsSync(scannedDataPath)) {
+            return res.status(404).json({ message: "Scanned folder not found." });
+        }
+
+        // Loop through each rejected file and remove it from both folders
+        rejectedFiles.forEach((file) => {
+            const rejectedFilePath = path.join(rejectedFolderPath, file);
+            const scannedFilePath = path.join(scannedDataPath, file);
+
+            // Remove the rejected file from the rejected folder
+            if (fs.existsSync(rejectedFilePath)) {
+                fs.unlinkSync(rejectedFilePath); // Remove rejected file
+            }
+
+            // Remove the rejected file from the scanned folder (if it exists there)
+            if (fs.existsSync(scannedFilePath)) {
+                fs.unlinkSync(scannedFilePath); // Remove scanned file
+            }
+        });
+
+        // Send success response
+        res.status(200).json({
+            message: "Rejected booklets have been successfully removed from both folders."
+        });
+
+    } catch (error) {
+        console.error("Error removing rejected booklets:", error.message);
+        res.status(500).json({ message: "Internal server error", error: error.message });
+    }
+};
+
+export { processingBooklets, servingBooklets, removeRejectedBooklets };
