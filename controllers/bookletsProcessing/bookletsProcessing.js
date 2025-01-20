@@ -7,7 +7,7 @@ import Schema from "../../models/schemeModel/schema.js";
 import { PDFDocument } from "pdf-lib";
 import { __dirname } from "../../server.js";
 
-const processingBooklets = async (req, res) => {
+const processingBookletsBySocket = async (req, res) => {
     const { subjectCode } = req.body;
 
     if (!subjectCode) {
@@ -220,7 +220,120 @@ const removeRejectedBooklets = async (req, res) => {
     }
 };
 
-export { processingBooklets, servingBooklets, removeRejectedBooklets };
+const getAllBookletsName = async (req, res) => {
+    const { subjectCode } = req.query;
+
+    if (!subjectCode) {
+        return res.status(400).json({ message: "Subject code is required." });
+    }
+
+    try {
+        const scannedDataPath = path.join(__dirname, "scannedFolder", subjectCode);
+
+        if (!fs.existsSync(scannedDataPath)) {
+            return res.status(404).json({ message: "Scanned folder not found." });
+        }
+
+        const files = fs.readdirSync(scannedDataPath).filter(file => file.endsWith(".pdf"));
+
+        if (files.length === 0) {
+            return res.status(404).json({ message: "No booklets found." });
+        }
+
+        res.status(200).json({ message: "Booklets found", booklets: files });
+    } catch (error) {
+        console.error("Error fetching booklets:", error);
+        res.status(500).json({ message: "Internal server error", error: error.message });
+    }
+}
+
+
+const processingBookletsManually = async (req, res) => {
+    const { subjectCode, bookletName } = req.body;
+
+    // Step 1: Validate the input
+    if (!subjectCode || !bookletName) {
+        return res.status(400).json({ message: "Subject code and booklet name are required." });
+    }
+
+    try {
+
+        const subject = await Subject.findOne({ code: subjectCode });
+        if (!subject) {
+            return res.status(404).json({ message: "Subject not found." });
+        }
+
+        const courseSchemaDetails = await CourseSchemaRelation.findOne({
+            subjectId: subject._id,
+        });
+
+        if (!courseSchemaDetails) {
+            return res.status(404).json({ message: "Schema not found for the subject." });
+        }
+
+        let schema = await Schema.findOne({ _id: courseSchemaDetails.schemaId });
+
+        if (!schema) {
+            return res.status(404).json({ message: "Schema not found." });
+        }
+
+        // Step 2: Set folder paths based on subjectCode
+        const scannedDataPath = path.join(__dirname, 'scannedFolder', subjectCode);
+        const processedFolderPath = path.join(__dirname, 'processedFolder', subjectCode);
+        const rejectedFolderPath = path.join(__dirname, 'rejectedBookletsFolder', subjectCode);
+
+        // Step 3: Verify that the scanned folder exists
+        if (!fs.existsSync(scannedDataPath)) {
+            return res.status(404).json({ message: "Scanned folder not found for the given subject code." });
+        }
+
+        // Step 4: Check if the specific booklet exists in the scanned folder
+        const pdfPath = path.join(scannedDataPath, bookletName);
+        if (!fs.existsSync(pdfPath)) {
+            return res.status(404).json({ message: `Booklet ${bookletName} not found in the scanned folder.` });
+        }
+
+        // Step 5: Load and process the PDF
+        const pdfBytes = fs.readFileSync(pdfPath);
+        const pdfDoc = await PDFDocument.load(pdfBytes);
+        const totalPages = pdfDoc.getPageCount();
+
+        // Step 6: Define the expected number of pages (for example, we expect 10 pages)
+        const expectedPages = 10; // You can replace this with the actual expected number of pages based on schema
+
+        let status = '';
+
+        // Step 7: Check if the PDF's page count matches the expected number of pages
+        if (totalPages === expectedPages) {
+            // If PDF is processed, move it to the processed folder
+            const processedPdfPath = path.join(processedFolderPath, bookletName);
+            fs.mkdirSync(path.dirname(processedPdfPath), { recursive: true });
+            fs.copyFileSync(pdfPath, processedPdfPath);
+            status = 'Processed';
+        } else {
+            // If PDF is rejected, move it to the rejected folder
+            const rejectedPdfPath = path.join(rejectedFolderPath, bookletName);
+            fs.mkdirSync(path.dirname(rejectedPdfPath), { recursive: true });
+            fs.copyFileSync(pdfPath, rejectedPdfPath);
+            status = 'Rejected';
+        }
+
+        // Step 8: Return the result to the client
+        return res.status(200).json({
+            message: `Processing completed for ${bookletName}.`,
+            status,
+            totalPages,
+            pdfName: bookletName,
+        });
+
+    } catch (error) {
+        console.error("Error processing booklet:", error.message);
+        return res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+};
+
+
+export { processingBookletsBySocket, servingBooklets, removeRejectedBooklets, getAllBookletsName, processingBookletsManually };
 
 
 
