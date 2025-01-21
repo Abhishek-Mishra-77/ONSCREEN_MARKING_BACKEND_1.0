@@ -3,8 +3,6 @@ import dotenv from "dotenv";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
-import swaggerUi from 'swagger-ui-express';
-import swaggerSpecs from "./services/swagger.js";
 import { Server } from "socket.io";
 import http from "http";
 
@@ -57,11 +55,9 @@ app.use(cors());
 subjectFolderWatcher(io);
 
 
-// Serve Swagger docs
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
 
 app.use('/uploadedPdfs', express.static(path.join(__dirname, 'uploadedPdfs')));
-app.use('/scannedData', express.static(path.join(__dirname, 'scannedData')));
+app.use('/processedFolder', express.static(path.join(__dirname, 'processedFolder')));
 
 /* -------------------------------------------------------------------------- */
 /*                           ROUTES ORIGIN                                    */
