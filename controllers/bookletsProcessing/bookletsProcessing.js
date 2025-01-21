@@ -6,6 +6,7 @@ import CourseSchemaRelation from "../../models/subjectSchemaRelationModel/subjec
 import Schema from "../../models/schemeModel/schema.js";
 import { PDFDocument } from "pdf-lib";
 import { __dirname } from "../../server.js";
+import xlsx from "xlsx";
 
 
 const processingBookletsBySocket = async (req, res) => {
@@ -70,9 +71,8 @@ const processingBookletsBySocket = async (req, res) => {
             fs.mkdirSync(processedFolderPath, { recursive: true });
             fs.mkdirSync(rejectedFolderPath, { recursive: true });
 
-            const pdfFiles = fs.readdirSync(scannedDataPath).filter(file => file.endsWith(".pdf"));
-
-            if (pdfFiles.length === 0) {
+            const initialPdfFiles = fs.readdirSync(scannedDataPath).filter(file => file.endsWith(".pdf"));
+            if (initialPdfFiles.length === 0) {
                 socket.emit("status", "No PDFs found in the scanned folder. Terminating process.");
                 socket.disconnect();
                 return;
@@ -82,49 +82,52 @@ const processingBookletsBySocket = async (req, res) => {
             const processedFiles = fs.readdirSync(processedFolderPath).map(file => file.replace(".pdf", ""));
             const rejectedFiles = fs.readdirSync(rejectedFolderPath).map(file => file.replace(".pdf", ""));
 
-            for (const pdfFile of pdfFiles) {
+            let reportData = []; // To store the report data for Excel
+
+            // Track the start of processing (only process initial PDFs)
+            const initialPdfSet = new Set(initialPdfFiles); // Set to track initial PDFs
+
+            for (const pdfFile of initialPdfFiles) {
                 const pdfPath = path.join(scannedDataPath, pdfFile);
                 const pdfFileNameWithoutExt = path.basename(pdfFile, path.extname(pdfFile));
+
+                // Check if this file is part of the initial set
+                if (!initialPdfSet.has(pdfFile)) {
+                    continue; // Ignore files added after the process has started
+                }
 
                 try {
                     const pdfBytes = fs.readFileSync(pdfPath);
                     const pdfDoc = await PDFDocument.load(pdfBytes);
                     const totalPages = pdfDoc.getPageCount();
 
-                    // Determine where to copy the file (processed or rejected)
                     let targetFolderPath;
                     let statusMessage = null;
 
                     if (totalPages === schema.numberOfPage) {
-                        // For processed PDFs, ensure we overwrite the previous file in the processed folder
                         targetFolderPath = processedFolderPath;
                         statusMessage = {
                             status: "Processed",
                             pdfFile: pdfFile,
                             totalPages: totalPages
                         }
-                        // statusMessage = `Processed: ${pdfFile} Pages: ${totalPages}`;
+                        reportData.push([pdfFile, "Processed", totalPages]); // Add data to report
                     } else {
-                        // For rejected PDFs, ensure we overwrite the previous file in the rejected folder
                         targetFolderPath = rejectedFolderPath;
                         statusMessage = {
                             status: "Rejected",
                             pdfFile: pdfFile,
                             totalPages: totalPages
                         }
-                        // statusMessage = `Rejected: ${pdfFile} Pages: ${totalPages}`;
+                        reportData.push([pdfFile, "Rejected", totalPages]); // Add data to report
                     }
 
                     // Ensure the target folder exists
                     fs.mkdirSync(targetFolderPath, { recursive: true });
 
-                    // Build the target file path (this will overwrite if file already exists)
                     const targetFilePath = path.join(targetFolderPath, pdfFile);
-
-                    // Copy the file (this will overwrite existing files)
                     fs.copyFileSync(pdfPath, targetFilePath);
 
-                    // Emit status to frontend
                     socket.emit("status", statusMessage);
 
                 } catch (error) {
@@ -133,6 +136,49 @@ const processingBookletsBySocket = async (req, res) => {
                 }
             }
 
+            // Update database: Remove PDFs from scanned folder and update folder counts
+            const scannedFolderPath = path.join(scannedDataPath);
+            const totalPdfsRemaining = fs.readdirSync(scannedFolderPath).filter(file => file.endsWith(".pdf")).length;
+
+            await SubjectFolderModel.updateOne(
+                { folderName: subjectCode },
+                { $set: { scannedFolder: totalPdfsRemaining } }
+            );
+
+            // After processing, remove all PDFs from the scanned folder
+            for (const pdfFile of initialPdfFiles) {
+                const pdfPath = path.join(scannedDataPath, pdfFile);
+
+                if (fs.existsSync(pdfPath)) {
+                    try {
+                        fs.unlinkSync(pdfPath);
+                        console.log(`Deleted file: ${pdfPath}`);
+                    } catch (error) {
+                        console.error(`Error deleting ${pdfPath}: ${error.message}`);
+                    }
+                } else {
+                    console.log(`File ${pdfPath} does not exist, skipping deletion.`);
+                }
+            }
+
+            // Generate the Excel report
+            const reportDir = path.join(__dirname, "processedReport", subjectCode);
+            if (!fs.existsSync(reportDir)) {
+                fs.mkdirSync(reportDir, { recursive: true });
+            }
+
+            const timestamp = new Date().toISOString().replace(/[-T:\.Z]/g, "");
+            const reportFileName = `${subjectCode}_${timestamp}.xlsx`;  // Format: subjectCode_timestamp.xlsx
+            const reportFilePath = path.join(reportDir, reportFileName);
+
+            const ws = xlsx.utils.aoa_to_sheet([["PDF File Name", "Status", "Total Pages"], ...reportData]);
+            const wb = xlsx.utils.book_new();
+            xlsx.utils.book_append_sheet(wb, ws, "Report");
+
+            // Write the Excel file
+            xlsx.writeFile(wb, reportFilePath);
+
+            socket.emit("status", `Report saved as ${reportFileName}`);
 
             socket.emit("status", "Processing completed!");
             socket.disconnect();

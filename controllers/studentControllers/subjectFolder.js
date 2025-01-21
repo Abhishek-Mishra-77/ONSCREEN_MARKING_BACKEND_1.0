@@ -43,27 +43,21 @@ const subjectFolderWatcher = () => {
             const existingFolder = await SubjectFolderModel.findOne({ folderName });
 
             let unAllocated = totalPdfs;
-            if (existingFolder) {
-                // Calculate the new unAllocated value
-                unAllocated = totalPdfs - existingFolder.totalStudentPdfs + existingFolder.unAllocated;
-                unAllocated = Math.max(unAllocated, 0); // Ensure unAllocated doesn't go negative
-            }
 
             // Use findOneAndUpdate to ensure uniqueness and atomicity
             const updatedFolder = await SubjectFolderModel.findOneAndUpdate(
                 { folderName },
                 {
                     $set: {
-                        totalStudentPdfs: totalPdfs,
-                        unAllocated: unAllocated,
+                        scannedFolder: totalPdfs,
                         updatedAt: new Date(),
                     },
                     $setOnInsert: {
                         description: "new",
                         allocated: 0,
                         evaluated: 0,
+                        unAllocated: 0,
                         evaluation_pending: 0,
-                        totalAllocations: 0,
                         createdAt: new Date(),
                     },
                 },
@@ -170,5 +164,6 @@ const subjectFolderWatcher = () => {
         console.log("Watcher is ready for changes.");
     });
 };
+
 
 export { subjectFolderWatcher };

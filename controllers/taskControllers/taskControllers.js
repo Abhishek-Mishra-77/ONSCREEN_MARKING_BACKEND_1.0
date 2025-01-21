@@ -13,7 +13,7 @@ import AnswerPdfImage from "../../models/EvaluationModels/answerPdfImageModel.js
 import Marks from "../../models/EvaluationModels/marksModel.js";
 import { __dirname } from "../../server.js";
 import Subject from "../../models/classModel/subjectModel.js";
-
+import SubjectFolderModel from "../../models/StudentModels/subjectFolderModel.js";
 
 const assigningTask = async (req, res) => {
     const { userId, subjectCode, bookletsToAssign = 2 } = req.body;
@@ -43,6 +43,7 @@ const assigningTask = async (req, res) => {
             return res.status(404).json({ message: "No subjects found for the user." });
         }
 
+
         const subjectDetails = await Subject.find({ _id: { $in: subjectCodes } });
 
 
@@ -55,7 +56,7 @@ const assigningTask = async (req, res) => {
         const subject = subjectDetails.find(subject => subject.code === subjectCode);
 
         if (!subject) {
-            return res.status(404).json({ message: "Subject not found." });
+            return res.status(404).json({ message: "Subject not found (upload master and question booklet)." });
         }
 
         // Check if the folder for the subject code exists
@@ -104,7 +105,29 @@ const assigningTask = async (req, res) => {
 
         await AnswerPdf.insertMany(answerPdfDocs, { session });
 
-        // Commit the transaction
+        // Calculate the total allocated PDFs dynamically
+        const previousAllocations = await AnswerPdf.countDocuments({ taskId: { $in: await Task.find({ subjectCode }).select('_id') } });
+        const allocatedIncrement = previousAllocations + pdfsToBeAssigned.length || 0;
+
+        // Ensure `evaluation_pending` and `evaluated` are valid counts
+        const evaluationPendingCount = await AnswerPdf.countDocuments({ status: false }) || 0;
+        const evaluatedCount = await AnswerPdf.countDocuments({ status: true }) || 0;
+
+        // Update the SubjectFolder document
+        await SubjectFolderModel.findOneAndUpdate(
+            { folderName: subjectCode },
+            {
+                $set: {
+                    allocated: allocatedIncrement,
+                    evaluation_pending: evaluationPendingCount + pdfsToBeAssigned.length,
+                    evaluated: evaluatedCount,
+                },
+                updatedAt: new Date(),
+            },
+            { session }
+        );
+
+
         await session.commitTransaction();
         session.endSession();
 
@@ -112,7 +135,6 @@ const assigningTask = async (req, res) => {
             message: `${pdfsToBeAssigned.length} PDFs assigned successfully.`,
             assignedPdfs: pdfsToBeAssigned,
         });
-
     } catch (error) {
         await session.abortTransaction();
         session.endSession();
@@ -137,33 +159,41 @@ const removeAssignedTask = async (req, res) => {
         // Start a session to handle the deletion as a transaction
         const session = await mongoose.startSession();
         session.startTransaction();
+        // Validate if the provided task ID is a valid MongoDB ObjectId
 
         try {
             // Find and delete the task
             const task = await Task.findByIdAndDelete(id, { session });
             if (!task) {
+                // Start a MongoDB session to handle the deletion as a transaction
                 await session.abortTransaction();
                 session.endSession();
                 return res.status(404).json({ message: "Task not found" });
             }
 
+            // Attempt to find and delete the task by its ID
             // Delete all related AnswerPdf documents
             await AnswerPdf.deleteMany({ taskId: id }, { session });
 
+            // If the task doesn't exist, abort the transaction and return a 404 response
             // Commit the transaction
             await session.commitTransaction();
             session.endSession();
 
             res.status(200).json({ message: "Task and associated PDFs deleted successfully" });
+            // Delete all AnswerPdf documents associated with the task ID
         } catch (error) {
             // Rollback the transaction in case of an error
             await session.abortTransaction();
+            // Commit the transaction after successful deletions
             session.endSession();
             console.error("Error during task and PDF deletion:", error);
             res.status(500).json({ message: "Failed to delete task and associated PDFs", error: error.message });
         }
+        // Send a success response after task and its PDFs are deleted
     } catch (error) {
         console.error("Error deleting task:", error);
+        // Rollback the transaction in case of an error during deletion
         res.status(500).json({ message: "Failed to delete task", error: error.message });
     }
 };
@@ -171,6 +201,7 @@ const removeAssignedTask = async (req, res) => {
 const getAssignTaskById = async (req, res) => {
     const { id } = req.params;
 
+    // Log and respond with an error if the process fails
     try {
         if (!isValidObjectId(id)) {
             return res.status(400).json({ message: "Invalid task ID." });
@@ -311,7 +342,15 @@ const getAllAssignedTaskByUserId = async (req, res) => {
         if (!isValidObjectId(userId)) {
             return res.status(400).json({ message: "Invalid user ID." });
         }
-        const tasks = await Task.find({ userId });
+        const tasks = await Task.find({
+            userId,
+            status: { $ne: 'success' }
+        });
+
+        if (tasks.length === 0) {
+            return res.status(404).json({ message: "No tasks found.", tasks: [] });
+        }
+
         res.status(200).json(tasks);
     } catch (error) {
         console.error("Error fetching tasks:", error);
@@ -324,6 +363,8 @@ const updateCurrentIndex = async (req, res) => {
     const { currentIndex } = req.body;
 
     try {
+        // const session = await mongoose.startSession();
+        // session.startTransaction();
 
         if (!isValidObjectId(id)) {
             return res.status(400).json({ message: "Invalid task ID." });
@@ -339,16 +380,51 @@ const updateCurrentIndex = async (req, res) => {
             return res.status(404).json({ message: "Task not found" });
         }
 
-        // Ensure currentIndex is a valid number and within the range of totalFiles
         if (currentIndex < 1 || currentIndex > task.totalBooklets) {
             return res.status(400).json({ message: `currentIndex should be between 1 and ${task.totalBooklets}` });
         }
 
-        // Update currentFileIndex
-        task.currentFileIndex = currentIndex;
-        await task.save();
+        const subject = await Subject.findOne({ code: task.subjectCode });
 
-        res.status(200).json(task);
+        if (!subject) {
+            return res.status(404).json({ message: "Subject not found (create subject)." });
+        }
+
+        const courseSchemaDetails = await SubjectSchemaRelation.findOne({
+            subjectId: subject._id,
+        });
+
+        if (!courseSchemaDetails) {
+            return res.status(404).json({ message: "Schema not found for the subject (upload master answer and master question)." });
+        }
+
+        const schemaDetails = await Schema.findOne({ _id: courseSchemaDetails.schemaId });
+
+        if (!schemaDetails) {
+            return res.status(404).json({ message: "Schema not found." });
+        }
+
+        const questiondefinition = await QuestionDefinition.find({ schemaId: schemaDetails._id, parentQuestionId: null });
+
+        if (!questiondefinition) {
+            return res.status(404).json({ message: "Question definition not found." });
+        }
+
+
+
+        return res.status(200).json({
+            task,
+            questiondefinition,
+            schemaDetails,
+            subject,
+            courseSchemaDetails
+        })
+
+        // // Update currentFileIndex
+        // task.currentFileIndex = currentIndex;
+        // await task.save();
+
+        // res.status(200).json(task);
     } catch (error) {
         console.error("Error updating task:", error);
         res.status(500).json({ message: "Failed to update task", error: error.message });
@@ -460,7 +536,25 @@ const getAllTasksBasedOnSubjectCode = async (req, res) => {
 }
 
 const completedTaskHandler = async (req, res) => {
+    const { id } = req.params;
 
+    try {
+        if (!isValidObjectId(id)) {
+            return res.status(400).json({ message: "Invalid task ID." });
+        }
+
+        const task = await Task.findById(id);
+
+        if (!task) {
+            return res.status(404).json({ message: "Task not found" });
+        }
+
+
+
+    } catch (error) {
+        console.error("Error fetching tasks:", error);
+        res.status(500).json({ message: "Failed to fetch tasks", error: error.message });
+    }
 }
 
 export {
@@ -472,6 +566,7 @@ export {
     getAllTaskHandler,
     updateCurrentIndex,
     getQuestionDefinitionTaskId,
-    getAllTasksBasedOnSubjectCode
+    getAllTasksBasedOnSubjectCode,
+    completedTaskHandler
 };
 

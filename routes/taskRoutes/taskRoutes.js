@@ -10,8 +10,8 @@ import {
     getAllTaskHandler,
     updateCurrentIndex,
     getQuestionDefinitionTaskId,
-    getAllTasksBasedOnSubjectCode
-
+    getAllTasksBasedOnSubjectCode,
+    completedTaskHandler
 } from "../../controllers/taskControllers/taskControllers.js";
 
 import authMiddleware from "../../Middlewares/authMiddleware.js";
@@ -29,5 +29,6 @@ router.get("/get/task/:id", getAssignTaskById);
 router.get("/get/questiondefinition", getQuestionDefinitionTaskId);
 router.get("/getall/tasks/:userId", getAllAssignedTaskByUserId);
 router.get("/subjectcode", getAllTasksBasedOnSubjectCode);
+router.put("/completedtask/:id", completedTaskHandler);
 
 export default router;

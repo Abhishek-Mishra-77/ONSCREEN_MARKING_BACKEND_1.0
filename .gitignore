@@ -30,6 +30,7 @@ uploadedPdfs/
 scannedFolder/
 processedFolder/
 rejectedBookletsFolder/
+processedReport/
 
 
 # Runtime data

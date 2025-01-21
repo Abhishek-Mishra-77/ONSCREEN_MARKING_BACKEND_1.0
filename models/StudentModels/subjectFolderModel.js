@@ -5,10 +5,6 @@ const subjectFolderSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    totalStudentPdfs: {
-        type: Number,
-        required: true
-    },
     description: {
         type: String,
         required: true
@@ -29,7 +25,7 @@ const subjectFolderSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
-    totalAllocations: {
+    scannedFolder: {
         type: Number,
         required: true
     },
