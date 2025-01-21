@@ -441,6 +441,27 @@ const getQuestionDefinitionTaskId = async (req, res) => {
     }
 };
 
+const getAllTasksBasedOnSubjectCode = async (req, res) => {
+    const { subjectcode } = req.query;
+
+    try {
+
+        if (!subjectcode) {
+            return res.status(400).json({ message: "Subject code is required." });
+        }
+
+        const tasks = await Task.find({ subjectCode: subjectcode });
+
+        res.status(200).json(tasks);
+    } catch (error) {
+        console.error("Error fetching tasks:", error);
+        res.status(500).json({ message: "Failed to fetch tasks", error: error.message });
+    }
+}
+
+const completedTaskHandler = async (req, res) => {
+
+}
 
 export {
     assigningTask,
@@ -450,6 +471,7 @@ export {
     getAllAssignedTaskByUserId,
     getAllTaskHandler,
     updateCurrentIndex,
-    getQuestionDefinitionTaskId
+    getQuestionDefinitionTaskId,
+    getAllTasksBasedOnSubjectCode
 };
 
