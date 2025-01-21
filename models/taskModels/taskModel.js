@@ -15,7 +15,7 @@ const taskSchema = new mongoose.Schema({
         required: true
     },
     status: {
-        type: Boolean,
+        type: String,
         required: true
     },
     currentFileIndex: {

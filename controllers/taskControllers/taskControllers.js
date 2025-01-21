@@ -8,7 +8,6 @@ import AnswerPdf from "../../models/EvaluationModels/studentAnswerPdf.js";
 import Schema from "../../models/schemeModel/schema.js";
 import QuestionDefinition from "../../models/schemeModel/questionDefinitionSchema.js";
 import mongoose from 'mongoose';
-import { PDFDocument } from 'pdf-lib';
 import extractImagesFromPdf from "./extractImagesFromPDF.js";
 import AnswerPdfImage from "../../models/EvaluationModels/answerPdfImageModel.js";
 import Marks from "../../models/EvaluationModels/marksModel.js";
@@ -90,7 +89,7 @@ const assigningTask = async (req, res) => {
             subjectCode,
             userId,
             totalBooklets: pdfsToBeAssigned.length,
-            status: false,
+            status: "inactive",
             currentFileIndex: 1,
         });
 
@@ -113,6 +112,7 @@ const assigningTask = async (req, res) => {
             message: `${pdfsToBeAssigned.length} PDFs assigned successfully.`,
             assignedPdfs: pdfsToBeAssigned,
         });
+
     } catch (error) {
         await session.abortTransaction();
         session.endSession();
@@ -242,10 +242,15 @@ const getAssignTaskById = async (req, res) => {
             return res.status(404).json({ message: `PDF file ${currentPdf.answerPdfName} not found.` });
         }
 
+
+        task.status = "active";
+        await task.save();
+
         // Check if the images have already been extracted and stored in the database
         const extractedImages = await AnswerPdfImage.find({ answerPdfId: currentPdf._id });
-        
+
         let extractedBookletPath = `processedFolder/${task.subjectCode}/extractedBooklets/${path.basename(currentPdf.answerPdfName, '.pdf')}`;
+
         if (extractedImages.length > 0) {
             return res.status(200).json({
                 task,
@@ -273,14 +278,16 @@ const getAssignTaskById = async (req, res) => {
             status: "notVisited"
         }));
 
-        await AnswerPdfImage.insertMany(imageDocs);
+        let insertedImages = await AnswerPdfImage.insertMany(imageDocs);
+
+
 
         return res.status(200).json({
             task,
             answerPdfDetails: currentPdf,
-            answerPdfImages: imageFiles,
             schemaDetails,
-            extractedImages
+            extractedBookletPath,
+            answerPdfImages: insertedImages
         });
     } catch (error) {
         console.error("Error fetching task:", error);
@@ -327,10 +334,10 @@ const updateCurrentIndex = async (req, res) => {
         }
 
         const task = await Task.findById(id);
+
         if (!task) {
             return res.status(404).json({ message: "Task not found" });
         }
-
 
         // Ensure currentIndex is a valid number and within the range of totalFiles
         if (currentIndex < 1 || currentIndex > task.totalBooklets) {
@@ -348,7 +355,6 @@ const updateCurrentIndex = async (req, res) => {
     }
 };
 
-
 const getQuestionDefinitionTaskId = async (req, res) => {
     const { answerPdfId, taskId } = req.query;
 
@@ -364,23 +370,34 @@ const getQuestionDefinitionTaskId = async (req, res) => {
 
         // Retrieve the task
         const task = await Task.findById(taskId);
+
         if (!task) {
             return res.status(404).json({ message: "Task not found" });
         }
 
-        // Retrieve the related SubjectSchemaRelation and Schema
-        const subjectSchemaRelationDetails = await SubjectSchemaRelation.findById(task.subjectSchemaRelationId);
-        if (!subjectSchemaRelationDetails) {
-            return res.status(404).json({ message: "SubjectSchemaRelation not found" });
+        const subject = await Subject.findOne({ code: task.subjectCode });
+
+        if (!subject) {
+            return res.status(404).json({ message: "Subject not found (create subject)." });
         }
 
-        const schemaDetails = await Schema.findById(subjectSchemaRelationDetails.schemaId);
+        const courseSchemaDetails = await SubjectSchemaRelation.findOne({
+            subjectId: subject._id,
+        });
+
+        if (!courseSchemaDetails) {
+            return res.status(404).json({ message: "Schema not found for the subject (upload master answer and master question)." });
+        }
+
+        const schemaDetails = await Schema.findOne({ _id: courseSchemaDetails.schemaId });
+
         if (!schemaDetails) {
-            return res.status(404).json({ message: "Schema not found" });
+            return res.status(404).json({ message: "Schema not found." });
         }
 
         // Fetch all QuestionDefinitions for the schema
-        const questionDefinitions = await QuestionDefinition.find({ schemaId: subjectSchemaRelationDetails.schemaId });
+        const questionDefinitions = await QuestionDefinition.find({ schemaId: schemaDetails.id });
+
         if (!questionDefinitions || questionDefinitions.length === 0) {
             return res.status(404).json({ message: "No QuestionDefinitions found" });
         }
@@ -423,6 +440,7 @@ const getQuestionDefinitionTaskId = async (req, res) => {
         res.status(500).json({ message: "Failed to fetch tasks", error: error.message });
     }
 };
+
 
 export {
     assigningTask,
