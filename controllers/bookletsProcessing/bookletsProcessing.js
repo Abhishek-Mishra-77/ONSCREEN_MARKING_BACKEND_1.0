@@ -260,7 +260,7 @@ const processingBookletsManually = async (req, res) => {
 
         const subject = await Subject.findOne({ code: subjectCode });
         if (!subject) {
-            return res.status(404).json({ message: "Subject not found." });
+            return res.status(404).json({ message: "Subject not found (create subject)." });
         }
 
         const courseSchemaDetails = await CourseSchemaRelation.findOne({
@@ -268,7 +268,7 @@ const processingBookletsManually = async (req, res) => {
         });
 
         if (!courseSchemaDetails) {
-            return res.status(404).json({ message: "Schema not found for the subject." });
+            return res.status(404).json({ message: "Schema not found for the subject (upload master answer and master question)." });
         }
 
         let schema = await Schema.findOne({ _id: courseSchemaDetails.schemaId });
