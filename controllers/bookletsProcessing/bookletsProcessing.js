@@ -7,6 +7,7 @@ import Schema from "../../models/schemeModel/schema.js";
 import { PDFDocument } from "pdf-lib";
 import { __dirname } from "../../server.js";
 
+
 const processingBookletsBySocket = async (req, res) => {
     const { subjectCode } = req.body;
 

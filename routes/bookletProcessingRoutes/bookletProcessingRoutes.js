@@ -1,6 +1,13 @@
 import express from "express";
 const router = express.Router();
-import { processingBookletsBySocket, servingBooklets, removeRejectedBooklets, getAllBookletsName, processingBookletsManually } from "../../controllers/bookletsProcessing/bookletsProcessing.js";
+import {
+    processingBookletsBySocket,
+    servingBooklets,
+    removeRejectedBooklets,
+    getAllBookletsName,
+    processingBookletsManually
+} from "../../controllers/bookletsProcessing/bookletsProcessing.js";
+
 import authMiddleware from "../../Middlewares/authMiddleware.js";
 
 router.post('/processing', processingBookletsBySocket);

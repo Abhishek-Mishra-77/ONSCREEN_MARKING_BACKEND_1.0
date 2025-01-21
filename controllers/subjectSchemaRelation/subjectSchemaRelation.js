@@ -33,6 +33,7 @@ const createSubjectSchemaRelation = async (req, res) => {
 
         // Check if the Subject exists
         const isValidSubject = await Subject.findOne({ _id: subjectId });
+
         if (!isValidSubject) {
             return res.status(404).json({ message: "Subject not found." });
         }
@@ -43,10 +44,31 @@ const createSubjectSchemaRelation = async (req, res) => {
             return res.status(404).json({ message: "Schema not found." });
         }
 
-        // Check if the relation name is unique
-        const isRelationNameUnique = await SubjectSchemaRelation.findOne({ subjectId, schemaId, relationName });
-        if (isRelationNameUnique) {
-            return res.status(400).json({ message: "Relation name already exists." });
+        // Remove any existing SubjectSchemaRelation with the same schemaId and subjectId
+        const existingRelation = await SubjectSchemaRelation.findOne({ schemaId, subjectId });
+
+        if (existingRelation) {
+            // Delete associated files
+            const questionPdfPath = path.resolve(process.cwd(), 'uploadedPdfs/questionPdfs', `${existingRelation.questionPdfPath}.pdf`);
+            const answerPdfPath = path.resolve(process.cwd(), 'uploadedPdfs/answerPdfs', `${existingRelation.answerPdfPath}.pdf`);
+            const questionImageDir = path.resolve(process.cwd(), 'uploadedPdfs/extractedQuestionPdfImages', existingRelation.questionPdfPath);
+            const answerImageDir = path.resolve(process.cwd(), 'uploadedPdfs/extractedAnswerPdfImages', existingRelation.answerPdfPath);
+
+            // Delete files and directories
+            [questionPdfPath, answerPdfPath].forEach((filePath) => {
+                if (fs.existsSync(filePath)) {
+                    fs.unlinkSync(filePath); // Remove PDF files
+                }
+            });
+
+            [questionImageDir, answerImageDir].forEach((dirPath) => {
+                if (fs.existsSync(dirPath)) {
+                    fs.rmSync(dirPath, { recursive: true, force: true }); // Remove image directories
+                }
+            });
+
+            // Remove the existing database entry
+            await SubjectSchemaRelation.deleteOne({ _id: existingRelation._id });
         }
 
         // Define base directories for storing files
@@ -56,7 +78,7 @@ const createSubjectSchemaRelation = async (req, res) => {
         const extractedQuestionImageDir = path.join(baseDir, 'extractedQuestionPdfImages');
         const extractedAnswerImageDir = path.join(baseDir, 'extractedAnswerPdfImages');
 
-        // Ensure the directories exist (ensure async operations)
+        // Ensure the directories exist
         const ensureDir = (dir) => {
             if (!fs.existsSync(dir)) {
                 fs.mkdirSync(dir, { recursive: true });
@@ -112,7 +134,7 @@ const createSubjectSchemaRelation = async (req, res) => {
     }
 };
 
-export default createSubjectSchemaRelation;
+
 
 /* -------------------------------------------------------------------------- */
 /*                           GET SUBJECT SCHEMA RELATION                      */
@@ -488,6 +510,8 @@ const getAllCoordinatesAndSchemaRelationDetails = async (req, res) => {
         return res.status(500).json({ error: 'An error occurred while retrieving the subject schema relations.' });
     }
 }
+
+export default createSubjectSchemaRelation;
 
 export {
     createSubjectSchemaRelation,
