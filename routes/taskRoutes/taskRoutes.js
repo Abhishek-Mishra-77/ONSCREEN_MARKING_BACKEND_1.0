@@ -11,7 +11,7 @@ import {
     updateCurrentIndex,
     getQuestionDefinitionTaskId,
     getAllTasksBasedOnSubjectCode,
-    completedTaskHandler
+    completedBookletHandler
 } from "../../controllers/taskControllers/taskControllers.js";
 
 import authMiddleware from "../../Middlewares/authMiddleware.js";
@@ -29,6 +29,6 @@ router.get("/get/task/:id", getAssignTaskById);
 router.get("/get/questiondefinition", getQuestionDefinitionTaskId);
 router.get("/getall/tasks/:userId", getAllAssignedTaskByUserId);
 router.get("/subjectcode", getAllTasksBasedOnSubjectCode);
-router.put("/completedtask/:id", completedTaskHandler);
+router.put("/completedbooklet/:answerpdfid", completedBookletHandler);
 
 export default router;

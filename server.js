@@ -59,6 +59,7 @@ subjectFolderWatcher(io);
 app.use('/uploadedPdfs', express.static(path.join(__dirname, 'uploadedPdfs')));
 app.use('/processedFolder', express.static(path.join(__dirname, 'processedFolder')));
 
+
 /* -------------------------------------------------------------------------- */
 /*                           ROUTES ORIGIN                                    */
 /* -------------------------------------------------------------------------- */

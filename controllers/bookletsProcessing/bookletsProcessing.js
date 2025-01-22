@@ -6,8 +6,7 @@ import CourseSchemaRelation from "../../models/subjectSchemaRelationModel/subjec
 import Schema from "../../models/schemeModel/schema.js";
 import { PDFDocument } from "pdf-lib";
 import { __dirname } from "../../server.js";
-import xlsx from "xlsx";
-
+import SubjectFolderModel from "../../models/StudentModels/subjectFolderModel.js"
 
 const processingBookletsBySocket = async (req, res) => {
     const { subjectCode } = req.body;
@@ -78,23 +77,15 @@ const processingBookletsBySocket = async (req, res) => {
                 return;
             }
 
-            // Track already processed files
-            const processedFiles = fs.readdirSync(processedFolderPath).map(file => file.replace(".pdf", ""));
-            const rejectedFiles = fs.readdirSync(rejectedFolderPath).map(file => file.replace(".pdf", ""));
-
-            let reportData = []; // To store the report data for Excel
-
-            // Track the start of processing (only process initial PDFs)
-            const initialPdfSet = new Set(initialPdfFiles); // Set to track initial PDFs
+            const initialPdfSet = new Set(initialPdfFiles); // Track initial PDFs
+            let reportContent = `Processing Report for Subject: ${subjectCode}\n\nFile Name\t\tStatus\t\tTotal Pages\n`;
+            let processedCount = 0; // Track how many booklets were processed
 
             for (const pdfFile of initialPdfFiles) {
                 const pdfPath = path.join(scannedDataPath, pdfFile);
-                const pdfFileNameWithoutExt = path.basename(pdfFile, path.extname(pdfFile));
 
-                // Check if this file is part of the initial set
-                if (!initialPdfSet.has(pdfFile)) {
-                    continue; // Ignore files added after the process has started
-                }
+                // Ensure this file is part of the initial set
+                if (!initialPdfSet.has(pdfFile)) continue;
 
                 try {
                     const pdfBytes = fs.readFileSync(pdfPath);
@@ -102,84 +93,68 @@ const processingBookletsBySocket = async (req, res) => {
                     const totalPages = pdfDoc.getPageCount();
 
                     let targetFolderPath;
-                    let statusMessage = null;
+                    let status;
 
                     if (totalPages === schema.numberOfPage) {
                         targetFolderPath = processedFolderPath;
-                        statusMessage = {
-                            status: "Processed",
-                            pdfFile: pdfFile,
-                            totalPages: totalPages
-                        }
-                        reportData.push([pdfFile, "Processed", totalPages]); // Add data to report
+                        status = "Processed";
+                        processedCount++;
                     } else {
                         targetFolderPath = rejectedFolderPath;
-                        statusMessage = {
-                            status: "Rejected",
-                            pdfFile: pdfFile,
-                            totalPages: totalPages
-                        }
-                        reportData.push([pdfFile, "Rejected", totalPages]); // Add data to report
+                        status = "Rejected";
                     }
 
-                    // Ensure the target folder exists
+                    // Move the PDF to the target folder
                     fs.mkdirSync(targetFolderPath, { recursive: true });
-
                     const targetFilePath = path.join(targetFolderPath, pdfFile);
                     fs.copyFileSync(pdfPath, targetFilePath);
 
-                    socket.emit("status", statusMessage);
-
+                    // Append report content
+                    reportContent += `${pdfFile}\t\t${status}\t\t${totalPages}\n`;
+                    socket.emit("status", { pdfFile, status, totalPages });
                 } catch (error) {
                     console.error(`Error processing ${pdfFile}:`, error.message);
                     socket.emit("error", `Failed to process ${pdfFile}`);
                 }
             }
 
-            // Update database: Remove PDFs from scanned folder and update folder counts
-            const scannedFolderPath = path.join(scannedDataPath);
-            const totalPdfsRemaining = fs.readdirSync(scannedFolderPath).filter(file => file.endsWith(".pdf")).length;
-
-            await SubjectFolderModel.updateOne(
-                { folderName: subjectCode },
-                { $set: { scannedFolder: totalPdfsRemaining } }
-            );
-
             // After processing, remove all PDFs from the scanned folder
             for (const pdfFile of initialPdfFiles) {
                 const pdfPath = path.join(scannedDataPath, pdfFile);
+                if (fs.existsSync(pdfPath)) fs.unlinkSync(pdfPath);
+            }
 
-                if (fs.existsSync(pdfPath)) {
-                    try {
-                        fs.unlinkSync(pdfPath);
-                        console.log(`Deleted file: ${pdfPath}`);
-                    } catch (error) {
-                        console.error(`Error deleting ${pdfPath}: ${error.message}`);
-                    }
-                } else {
-                    console.log(`File ${pdfPath} does not exist, skipping deletion.`);
+            // Calculate the remaining files in the scanned folder
+            const totalPdfsRemaining = fs.readdirSync(scannedDataPath).filter(file => file.endsWith(".pdf")).length;
+
+            // Update the scanned folder count and unAllocated in the database
+            const folderDetails = await SubjectFolderModel.findOne({ folderName: subjectCode });
+
+            if (!folderDetails) {
+                socket.emit("error", "Folder details not found in the database. Terminating process.");
+                socket.disconnect();
+                return;
+            }
+
+            await SubjectFolderModel.updateOne(
+                { folderName: subjectCode },
+                {
+                    $set: { scannedFolder: totalPdfsRemaining },
+                    $inc: { unAllocated: processedCount },
                 }
-            }
+            );
 
-            // Generate the Excel report
+            // Save the report as a text file
             const reportDir = path.join(__dirname, "processedReport", subjectCode);
-            if (!fs.existsSync(reportDir)) {
-                fs.mkdirSync(reportDir, { recursive: true });
-            }
+            fs.mkdirSync(reportDir, { recursive: true });
 
             const timestamp = new Date().toISOString().replace(/[-T:\.Z]/g, "");
-            const reportFileName = `${subjectCode}_${timestamp}.xlsx`;  // Format: subjectCode_timestamp.xlsx
+            const reportFileName = `${subjectCode}_${timestamp}.txt`;
             const reportFilePath = path.join(reportDir, reportFileName);
 
-            const ws = xlsx.utils.aoa_to_sheet([["PDF File Name", "Status", "Total Pages"], ...reportData]);
-            const wb = xlsx.utils.book_new();
-            xlsx.utils.book_append_sheet(wb, ws, "Report");
-
-            // Write the Excel file
-            xlsx.writeFile(wb, reportFilePath);
+            fs.writeFileSync(reportFilePath, reportContent, "utf8");
 
             socket.emit("status", `Report saved as ${reportFileName}`);
-
             socket.emit("status", "Processing completed!");
             socket.disconnect();
         });
@@ -192,6 +167,7 @@ const processingBookletsBySocket = async (req, res) => {
         res.status(500).json({ message: "Internal Server Error", error: error.message });
     }
 };
+
 
 const servingBooklets = async (req, res) => {
     const { subjectCode, bookletName } = req.query;

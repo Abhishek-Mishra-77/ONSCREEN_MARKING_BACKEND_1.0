@@ -33,18 +33,11 @@ const subjectFolderWatcher = () => {
         try {
             const totalPdfs = countPdfsInFolder(folderPath);
 
-            // If there are no PDFs, don't create or update the folder in the database
             if (totalPdfs === 0) {
                 console.log(`No PDFs found in folder: ${folderName}. Skipping database update.`);
                 return;
             }
 
-            // Check if the folder already exists
-            const existingFolder = await SubjectFolderModel.findOne({ folderName });
-
-            let unAllocated = totalPdfs;
-
-            // Use findOneAndUpdate to ensure uniqueness and atomicity
             const updatedFolder = await SubjectFolderModel.findOneAndUpdate(
                 { folderName },
                 {
@@ -65,7 +58,7 @@ const subjectFolderWatcher = () => {
             );
 
             // Emit the updated data to clients
-            io.emit(existingFolder ? "folder-update" : "folder-add", updatedFolder);
+            io.emit("folder-update", updatedFolder);
         } catch (error) {
             console.error(`Error handling folder in database: ${error.message}`);
         }
@@ -96,7 +89,25 @@ const subjectFolderWatcher = () => {
         });
     });
 
-    // File addition event
+    // Watch for database changes
+    const dbWatcher = SubjectFolderModel.watch([], { fullDocument: "updateLookup" });
+    dbWatcher.on("change", (change) => {
+        switch (change.operationType) {
+            case "insert":
+                io.emit("folder-add", change.fullDocument);
+                break;
+            case "update":
+                io.emit("folder-update", change.fullDocument);
+                break;
+            case "delete":
+                io.emit("folder-remove", { folderName: change.documentKey.folderName });
+                break;
+            default:
+                console.log("Unhandled change type:", change.operationType);
+        }
+    });
+
+    // File watcher events
     watcher.on("add", async (filePath) => {
         const parsedPath = path.parse(filePath);
         const folderName = parsedPath.dir.split(path.sep).pop();
@@ -110,18 +121,13 @@ const subjectFolderWatcher = () => {
         }
     });
 
-    // Folder addition event
     watcher.on("addDir", async (folderPath) => {
         const folderName = path.basename(folderPath);
 
-        // Skip the root 'scannedFolder' itself
         if (folderName !== "scannedFolder") {
             const folderFiles = fs.readdirSync(folderPath);
-
-            // Check if the folder contains PDF files and not subfolders
             const hasPdfFiles = folderFiles.some(file => file.endsWith(".pdf"));
 
-            // Only track folders containing PDFs
             if (hasPdfFiles) {
                 await updateOrCreateFolderInDatabase(folderName, folderPath);
             } else {
@@ -130,40 +136,28 @@ const subjectFolderWatcher = () => {
         }
     });
 
-    // File removal event: Track when PDFs are deleted
     watcher.on("unlink", async (filePath) => {
         const parsedPath = path.parse(filePath);
         const folderName = parsedPath.dir.split(path.sep).pop();
         const fileName = parsedPath.base;
 
-        // If a PDF is removed, update the folder information in the database
         if (fileName.endsWith(".pdf") && folderName !== "scannedFolder") {
             const folderPath = path.join(scannedDataPath, folderName);
-
-            // Update the folder information (decrement unAllocated)
             await updateOrCreateFolderInDatabase(folderName, folderPath);
         }
     });
 
-    // Folder removal event: Remove folder if no PDFs remain
     watcher.on("unlinkDir", async (folderPath) => {
         const folderName = path.basename(folderPath);
 
         if (folderName !== "scannedFolder") {
-            const folderPath = path.join(scannedDataPath, folderName);
-            const totalPdfs = countPdfsInFolder(folderPath);
-
-            if (totalPdfs === 0) {
-                await removeFolderFromDatabase(folderName); // If no PDFs remain, remove from DB
-            }
+            await removeFolderFromDatabase(folderName);
         }
     });
 
-    // Watcher is ready
     watcher.on("ready", () => {
         console.log("Watcher is ready for changes.");
     });
 };
-
 
 export { subjectFolderWatcher };

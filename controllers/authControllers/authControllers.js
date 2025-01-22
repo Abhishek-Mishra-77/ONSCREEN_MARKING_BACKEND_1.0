@@ -33,7 +33,7 @@ const createUser = async (req, res) => {
     const session = await mongoose.startSession();
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    // const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
 
     try {
         session.startTransaction();
@@ -50,16 +50,16 @@ const createUser = async (req, res) => {
         });
         await newUser.save();
 
-        await sendOtpEmail(email, otpCode);
+        // await sendOtpEmail(email, otpCode);
 
-        await Otp.create({
-            user: newUser._id,
-            otp: otpCode,
-            expiresAt: Date.now() + 10 * 60 * 1000
-        });
+        // await Otp.create({
+        //     user: newUser._id,
+        //     otp: otpCode,
+        //     expiresAt: Date.now() + 10 * 60 * 1000
+        // });
 
         await session.commitTransaction();
-        res.status(201).json({ message: "User created successfully. Please verify your OTP." });
+        res.status(201).json({ message: "User created successfully" });
     } catch (error) {
         await session.abortTransaction();
         console.error("Error during user creation:", error);
