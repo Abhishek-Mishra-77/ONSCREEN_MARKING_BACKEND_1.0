@@ -329,6 +329,7 @@ const getAssignTaskById = async (req, res) => {
     }
 };
 
+
 const getAllTaskHandler = async (req, res) => {
     try {
         const tasks = await Task.find().populate('userId', 'name email');
@@ -366,8 +367,6 @@ const updateCurrentIndex = async (req, res) => {
     const { currentIndex } = req.body;
 
     try {
-        // const session = await mongoose.startSession();
-        // session.startTransaction();
 
         if (!isValidObjectId(id)) {
             return res.status(400).json({ message: "Invalid task ID." });
@@ -378,56 +377,21 @@ const updateCurrentIndex = async (req, res) => {
         }
 
         const task = await Task.findById(id);
-
         if (!task) {
             return res.status(404).json({ message: "Task not found" });
         }
 
-        if (currentIndex < 1 || currentIndex > task.totalBooklets) {
-            return res.status(400).json({ message: `currentIndex should be between 1 and ${task.totalBooklets}` });
+
+        // Ensure currentIndex is a valid number and within the range of totalFiles
+        if (currentIndex < 1 || currentIndex > task.totalFiles) {
+            return res.status(400).json({ message: `currentIndex should be between 1 and ${task.totalFiles}` });
         }
 
-        const subject = await Subject.findOne({ code: task.subjectCode });
+        // Update currentFileIndex
+        task.currentFileIndex = currentIndex;
+        await task.save();
 
-        if (!subject) {
-            return res.status(404).json({ message: "Subject not found (create subject)." });
-        }
-
-        const courseSchemaDetails = await SubjectSchemaRelation.findOne({
-            subjectId: subject._id,
-        });
-
-        if (!courseSchemaDetails) {
-            return res.status(404).json({ message: "Schema not found for the subject (upload master answer and master question)." });
-        }
-
-        const schemaDetails = await Schema.findOne({ _id: courseSchemaDetails.schemaId });
-
-        if (!schemaDetails) {
-            return res.status(404).json({ message: "Schema not found." });
-        }
-
-        const questiondefinition = await QuestionDefinition.find({ schemaId: schemaDetails._id, parentQuestionId: null });
-
-        if (!questiondefinition) {
-            return res.status(404).json({ message: "Question definition not found." });
-        }
-
-
-
-        return res.status(200).json({
-            task,
-            questiondefinition,
-            schemaDetails,
-            subject,
-            courseSchemaDetails
-        })
-
-        // // Update currentFileIndex
-        // task.currentFileIndex = currentIndex;
-        // await task.save();
-
-        // res.status(200).json(task);
+        res.status(200).json(task);
     } catch (error) {
         console.error("Error updating task:", error);
         res.status(500).json({ message: "Failed to update task", error: error.message });

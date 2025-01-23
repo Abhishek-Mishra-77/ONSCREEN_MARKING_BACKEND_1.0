@@ -133,8 +133,6 @@ const createSubjectSchemaRelation = async (req, res) => {
     }
 };
 
-
-
 /* -------------------------------------------------------------------------- */
 /*                           GET SUBJECT SCHEMA RELATION                      */
 /* -------------------------------------------------------------------------- */
@@ -314,7 +312,6 @@ const updateSubjectSchemaRelation = async (req, res) => {
     }
 };
 
-
 /* -------------------------------------------------------------------------- */
 /*                           GET ALL SUBJECT SCHEMA RELATION                  */
 /* -------------------------------------------------------------------------- */
@@ -343,6 +340,7 @@ const getAllSubjectSchemaRelationBySubjectId = async (req, res) => {
 /*                           GET ALL SUBJECT SCHEMA RELATION                  */
 /* -------------------------------------------------------------------------- */
 
+
 const getAllSubjectSchemaRelationBySchemaId = async (req, res) => {
     const { schemaId } = req.params;
 
@@ -365,6 +363,7 @@ const getAllSubjectSchemaRelationBySchemaId = async (req, res) => {
         res.status(500).json({ error: 'An error occurred while retrieving the subject schema relations.' });
     }
 }
+
 /* -------------------------------------------------------------------------- */
 /*                           GET ALL SUBJECT SCHEMA RELATION                  */
 /* -------------------------------------------------------------------------- */
@@ -424,21 +423,28 @@ const getAllSubjectSchemaRelationBySubjectIdCoordinateStatusTrue = async (req, r
 }
 
 const getAllCoordinatesAndSchemaRelationDetails = async (req, res) => {
-    const { questionDefinitionId, subjectRelationId } = req.query;
-
-    console.log(questionDefinitionId, subjectRelationId);
+    const { subjectcode, questionDefinitionId } = req.query;
 
     try {
-        if (!isValidObjectId(questionDefinitionId) || !isValidObjectId(subjectRelationId)) {
+        if (!isValidObjectId(questionDefinitionId)) {
             return res.status(400).json({ message: " Invalid subject schema relation ID or question definition ID." });
         }
 
-        const subjectSchemaRelation = await SubjectSchemaRelation.findById({ _id: subjectRelationId });
-        const coordinateDetails = await CoordinateAllocation.find({ courseSchemaRelationId: subjectRelationId, questionId: questionDefinitionId });
+
+        const subjectDetails = await Subject.findOne({ code: subjectcode });
+
+        if (!subjectDetails) {
+            return res.status(404).json({ message: "Subject not found." });
+        }
+
+        const subjectSchemaRelation = await SubjectSchemaRelation.findOne({ subjectId: subjectDetails._id });
+
 
         if (!subjectSchemaRelation) {
             return res.status(404).json({ message: "Subject schema relation not found." });
         }
+
+        const coordinateDetails = await CoordinateAllocation.find({ courseSchemaRelationId: subjectSchemaRelation._id, questionId: questionDefinitionId });
 
         if (!coordinateDetails) {
             return res.status(404).json({ message: "Coordinates not found." });
@@ -455,6 +461,9 @@ const getAllCoordinatesAndSchemaRelationDetails = async (req, res) => {
         return res.status(500).json({ error: 'An error occurred while retrieving the subject schema relations.' });
     }
 }
+
+
+
 
 export default createSubjectSchemaRelation;
 

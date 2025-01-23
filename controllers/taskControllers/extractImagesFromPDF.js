@@ -17,7 +17,24 @@ const extractImagesFromPdf = async (pdfPath, outputDir) => {
     try {
         await poppler.convert(pdfPath, options);
 
-        const images = fs.readdirSync(outputDir);
+        // Get all files in the output directory
+        let files = fs.readdirSync(outputDir);
+
+        // Log all files for debugging
+        console.log("Extracted files before filtering:", files);
+
+        // Filter only PNG files and ensure they're valid
+        let images = files
+            .filter(file => file.endsWith('.png'))
+            .sort((a, b) => {
+                const numA = parseInt(a.match(/\d+/)?.[0] || 0, 10);
+                const numB = parseInt(b.match(/\d+/)?.[0] || 0, 10);
+                return numA - numB;
+            });
+
+        console.log("Filtered and sorted images:", images);
+
+        // Rename images sequentially
         const renamedImages = [];
         images.forEach((image, index) => {
             const oldPath = path.join(outputDir, image);

@@ -13,6 +13,8 @@ import {
     getAllCoordinatesAndSchemaRelationDetails
 } from "../../controllers/subjectSchemaRelation/subjectSchemaRelation.js"
 
+
+
 import uploadMiddleware from '../../controllers/subjectSchemaRelation/uploadingPdf.js';
 import authMiddleware from "../../Middlewares/authMiddleware.js";
 
