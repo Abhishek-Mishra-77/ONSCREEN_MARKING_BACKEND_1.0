@@ -329,7 +329,6 @@ const getAssignTaskById = async (req, res) => {
     }
 };
 
-
 const getAllTaskHandler = async (req, res) => {
     try {
         const tasks = await Task.find().populate('userId', 'name email');
@@ -522,19 +521,51 @@ const completedBookletHandler = async (req, res) => {
         for (const answerPdfImage of answerPdfImages) {
             const iconExists = await Icon.findOne({ answerPdfImageId: answerPdfImage._id });
             if (!iconExists) {
-                return res.status(404).json({ message: "Make sure all the images are updated with an Icon." });
+                return res.status(404).json({ message: "Make sure all the images are updated with an Icon.", success: false });
             }
         }
 
         await AnswerPdf.findByIdAndUpdate(currentPdf._id, { status: true });
 
-        res.status(200).json({ message: "All images have icons. The AnswerPdf status has been updated." });
+        res.status(200).json({ message: "All images have icons. The AnswerPdf status has been updated.", success: true });
 
     } catch (error) {
         console.error("Error fetching tasks:", error);
         res.status(500).json({ message: "Failed to fetch tasks", error: error.message });
     }
 };
+
+
+const checkTaskCompletionHandler = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        if (!isValidObjectId(id)) {
+            return res.status(400).json({ message: "Invalid task ID." });
+        }
+
+        const task = await Task.findById(id);
+
+        if (!task) {
+            return res.status(404).json({ message: "Task not found" });
+        }
+
+        const booklets = await AnswerPdf.find({ taskId: id, status: false });
+
+
+        if (booklets.length === 0) {
+            task.status = "success";
+            await task.save();
+            return res.status(200).json({ message: "Task is completed", success: true });
+        }
+
+        return res.status(200).json({ message: "Task is not completed", success: false });
+
+    }
+    catch (error) {
+        return res.status(500).json({ message: "Failed to fetch tasks", error: error.message });
+    }
+}
 
 
 export {
@@ -547,6 +578,7 @@ export {
     updateCurrentIndex,
     getQuestionDefinitionTaskId,
     getAllTasksBasedOnSubjectCode,
-    completedBookletHandler
+    completedBookletHandler,
+    checkTaskCompletionHandler
 };
 
