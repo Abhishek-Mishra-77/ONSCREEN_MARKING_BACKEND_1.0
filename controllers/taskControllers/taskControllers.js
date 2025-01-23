@@ -46,9 +46,7 @@ const assigningTask = async (req, res) => {
             return res.status(404).json({ message: "No subjects found for the user." });
         }
 
-
         const subjectDetails = await Subject.find({ _id: { $in: subjectCodes } });
-
 
         // If no subjects found
         if (subjectDetails.length === 0) {
@@ -568,7 +566,7 @@ const checkTaskCompletionHandler = async (req, res) => {
         console.log("Details of all PDFs:", completedBooklets);
 
         subjectFolderDetails.evaluated = completedBooklets;
-        subjectFolderDetails.evaluation_pending -= completedBooklets;
+        subjectFolderDetails.evaluation_pending = totalBooklets - completedBooklets;
         await subjectFolderDetails.save();
 
         const booklets = await AnswerPdf.find({ taskId: id, status: false });
@@ -586,7 +584,6 @@ const checkTaskCompletionHandler = async (req, res) => {
         return res.status(500).json({ message: "Failed to fetch tasks", error: error.message });
     }
 }
-
 
 export {
     assigningTask,
