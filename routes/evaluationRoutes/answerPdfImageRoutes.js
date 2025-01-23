@@ -3,9 +3,9 @@ const router = express.Router();
 import {
     getAnswerPdfImages,
     updateAnswerPdfImageById,
-    savedAnswerImages,
-    upload
+    savedAnswerImages
 } from "../../controllers/evaluationControllers/answerPdfImageController.js";
+import upload from "../../services/uploadFile.js";
 
 import authMiddleware from "../../Middlewares/authMiddleware.js";
 

@@ -1,11 +1,9 @@
 import fs from "fs";
 import path from "path";
-import multer from "multer";
+
 import AnswerPdfImage from "../../models/EvaluationModels/answerPdfImageModel.js";
 import { isValidObjectId } from "../../services/mongoIdValidation.js";
 import { __dirname } from "../../server.js";
-
-
 
 const getAnswerPdfImages = async (req, res) => {
     const { answerPdfId } = req.params;
@@ -48,23 +46,6 @@ const updateAnswerPdfImageById = async (req, res) => {
     }
 };
 
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const tempFolder = path.join(__dirname, "temp/uploads");
-
-        // Create the directory if it doesn't exist
-        if (!fs.existsSync(tempFolder)) {
-            fs.mkdirSync(tempFolder, { recursive: true });
-        }
-
-        cb(null, tempFolder);
-    },
-    filename: (req, file, cb) => {
-        cb(null, file.originalname);
-    },
-});
-
-const upload = multer({ storage });
 
 const savedAnswerImages = async (req, res) => {
     const { subjectcode, bookletName, imageName } = req.body;
@@ -109,4 +90,4 @@ const savedAnswerImages = async (req, res) => {
 };
 
 
-export { getAnswerPdfImages, updateAnswerPdfImageById, savedAnswerImages, upload }
+export { getAnswerPdfImages, updateAnswerPdfImageById, savedAnswerImages }

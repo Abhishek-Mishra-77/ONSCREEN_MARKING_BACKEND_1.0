@@ -25,7 +25,7 @@ import marksRoutes from './routes/evaluationRoutes/marksRoutes.js';
 import iconRoutes from './routes/evaluationRoutes/iconRoutes.js'
 import { subjectFolderWatcher } from "./controllers/studentControllers/subjectFolder.js";
 import bookletProcessingRoutes from "./routes/bookletProcessingRoutes/bookletProcessingRoutes.js";
-
+import resultGenerationRoutes from "./routes/resultGenerationRoutes/resultGenerationRoutes.js";
 
 /* -------------------------------------------------------------------------- */
 /*                           SERVER CONFIGURATION                             */
@@ -77,6 +77,7 @@ app.use("/api/evaluation/answerimages", answerPdfImageRoutes)
 app.use("/api/evaluation/marks", marksRoutes)
 app.use("/api/evaluation/icons", iconRoutes)
 app.use('/api/bookletprocessing', bookletProcessingRoutes)
+app.use('/api/resultgeneration', resultGenerationRoutes)
 
 
 // Socket.IO Connection event
