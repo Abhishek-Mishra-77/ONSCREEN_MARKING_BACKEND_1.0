@@ -521,13 +521,13 @@ const completedBookletHandler = async (req, res) => {
         for (const answerPdfImage of answerPdfImages) {
             const iconExists = await Icon.findOne({ answerPdfImageId: answerPdfImage._id });
             if (!iconExists) {
-                return res.status(404).json({ message: "Make sure all the images are updated with an Icon.", success: false });
+                return res.status(404).json({ message: " Ensure all answer sheets are annotated/marked.", success: false });
             }
         }
 
         await AnswerPdf.findByIdAndUpdate(currentPdf._id, { status: true });
 
-        res.status(200).json({ message: "All images have icons. The AnswerPdf status has been updated.", success: true });
+        res.status(200).json({ message: "All images have annotated/marked.. The AnswerPdf status has been updated.", success: true });
 
     } catch (error) {
         console.error("Error fetching tasks:", error);

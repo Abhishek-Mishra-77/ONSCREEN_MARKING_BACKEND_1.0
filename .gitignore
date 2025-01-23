@@ -31,6 +31,9 @@ scannedFolder/
 processedFolder/
 rejectedBookletsFolder/
 processedReport/
+temp/
+completedFolder/
+
 
 
 # Runtime data
