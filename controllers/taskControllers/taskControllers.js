@@ -550,8 +550,28 @@ const checkTaskCompletionHandler = async (req, res) => {
             return res.status(404).json({ message: "Task not found" });
         }
 
-        const booklets = await AnswerPdf.find({ taskId: id, status: false });
+        const tasks = await Task.find({ subjectCode: task.subjectCode });
 
+        let totalBooklets = 0;
+        let completedBooklets = 0;
+
+        for (const currentTask of tasks) {
+            const answerPdfs = await AnswerPdf.find({ taskId: currentTask._id, status: true });
+            totalBooklets += currentTask.totalBooklets;
+            completedBooklets += answerPdfs.length;
+        }
+
+        const subjectFolderDetails = await SubjectFolderModel.findOne({ folderName: task.subjectCode });
+
+        console.log(`Total Answer PDFs: ${totalBooklets}`);
+        console.log(subjectFolderDetails)
+        console.log("Details of all PDFs:", completedBooklets);
+
+        subjectFolderDetails.evaluated = completedBooklets;
+        subjectFolderDetails.evaluation_pending -= completedBooklets;
+        await subjectFolderDetails.save();
+
+        const booklets = await AnswerPdf.find({ taskId: id, status: false });
 
         if (booklets.length === 0) {
             task.status = "success";
