@@ -114,6 +114,9 @@ const assigningTask = async (req, res) => {
         const evaluatedCount = await AnswerPdf.countDocuments({ status: true, taskId: savedTask._id }) || 0;
 
 
+        // Calculate unAllocated PDFs dynamically
+        const unAllocatedCount = allPdfs.length - allocatedIncrement;
+
         // Update the SubjectFolder document
         await SubjectFolderModel.findOneAndUpdate(
             { folderName: subjectCode },
@@ -122,6 +125,7 @@ const assigningTask = async (req, res) => {
                     allocated: allocatedIncrement,
                     evaluation_pending: evaluationPendingCount + pdfsToBeAssigned.length,
                     evaluated: evaluatedCount,
+                    unAllocated: unAllocatedCount
                 },
                 updatedAt: new Date(),
             },
@@ -596,10 +600,6 @@ const checkTaskCompletionHandler = async (req, res) => {
         }
 
         const subjectFolderDetails = await SubjectFolderModel.findOne({ folderName: task.subjectCode });
-
-        console.log(`Total Answer PDFs: ${totalBooklets}`);
-        console.log(subjectFolderDetails)
-        console.log("Details of all PDFs:", completedBooklets);
 
         subjectFolderDetails.evaluated = completedBooklets;
         subjectFolderDetails.evaluation_pending = totalBooklets - completedBooklets;

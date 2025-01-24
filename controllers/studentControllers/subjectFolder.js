@@ -76,7 +76,6 @@ const subjectFolderWatcher = () => {
 
     // Send the current state of folders to the frontend on connection
     io.on("connection", async (socket) => {
-        console.log("A client connected:", socket.id);
         try {
             const folders = await SubjectFolderModel.find();
             socket.emit("folder-list", folders);

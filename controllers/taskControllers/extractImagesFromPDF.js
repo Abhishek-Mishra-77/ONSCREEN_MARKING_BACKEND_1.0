@@ -21,7 +21,6 @@ const extractImagesFromPdf = async (pdfPath, outputDir) => {
         let files = fs.readdirSync(outputDir);
 
         // Log all files for debugging
-        console.log("Extracted files before filtering:", files);
 
         // Filter only PNG files and ensure they're valid
         let images = files
@@ -32,7 +31,6 @@ const extractImagesFromPdf = async (pdfPath, outputDir) => {
                 return numA - numB;
             });
 
-        console.log("Filtered and sorted images:", images);
 
         // Rename images sequentially
         const renamedImages = [];

@@ -1,11 +1,15 @@
 import fs from "fs";
 import path from "path";
+import PDFDocument from "pdfkit";
+import archiver from "archiver";
 import csvToJson from "../../services/csvToJson.js";
 import convertJSONToCSV from "../../services/jsonToCsv.js";
 import Marks from "../../models/EvaluationModels/marksModel.js";
 import Task from "../../models/taskModels/taskModel.js";
 import AnswerPdf from "../../models/EvaluationModels/studentAnswerPdf.js";
 import { __dirname } from "../../server.js";
+import { isValidObjectId } from "../../services/mongoIdValidation.js";
+
 
 const generateResult = async (req, res) => {
     const { subjectcode } = req.body;
@@ -80,8 +84,6 @@ const generateResult = async (req, res) => {
                 };
             })
         );
-
-        console.log(generatingResults)
 
         // Match barcodes from the CSV with generatingResults
         const finalResults = csvData.map((row) => {
@@ -192,4 +194,105 @@ const downloadResultByName = async (req, res) => {
     }
 };
 
-export { generateResult, getPreviousResult, downloadResultByName };
+
+const getCompletedBooklets = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        if (!isValidObjectId(id)) {
+            return res.status(400).json({ message: "Invalid task ID." });
+        }
+
+        const task = await Task.findById(id);
+
+        if (!task) {
+            return res.status(404).json({ message: "Task not found" });
+        }
+
+        const booklets = await AnswerPdf.find({ taskId: task._id, status: true });
+
+        if (booklets.length === 0) {
+            return res.status(404).json({ message: "No completed booklets found" });
+        }
+
+        // Set up the response headers for streaming the ZIP file
+        res.setHeader("Content-Type", "application/zip");
+        res.setHeader(
+            "Content-Disposition",
+            `attachment; filename=${task.subjectCode}_completedBooklets.zip`
+        );
+
+        // Create the ZIP archive and pipe it to the response
+        const archive = archiver("zip", { zlib: { level: 9 } });
+        archive.pipe(res);
+
+        // Process each booklet and add to the ZIP
+        for (const booklet of booklets) {
+            const bookletFolder = path.join(
+                __dirname,
+                `completedFolder/${task.subjectCode}/${booklet.answerPdfName}`
+            );
+
+            console.log(`Processing folder: ${bookletFolder}`);
+
+            if (!fs.existsSync(bookletFolder)) {
+                return res.status(404).json({
+                    message: `Folder not found for booklet: ${booklet.answerPdfName}`,
+                });
+            }
+
+            const images = fs
+                .readdirSync(bookletFolder)
+                .filter((file) => file.endsWith(".png"))
+                .sort((a, b) => {
+                    const numA = parseInt(a.split("_")[1].split(".")[0], 10);
+                    const numB = parseInt(b.split("_")[1].split(".")[0], 10);
+                    return numA - numB;
+                });
+
+            if (images.length === 0) {
+                return res.status(404).json({
+                    message: `No images found in folder for booklet: ${booklet.answerPdfName}`,
+                });
+            }
+
+            // Generate the PDF for this booklet
+            const pdfBuffer = await generatePdfBuffer(images, bookletFolder);
+
+            // Add the PDF buffer to the ZIP archive
+            archive.append(pdfBuffer, { name: `${booklet.answerPdfName}.pdf` });
+        }
+
+        // Finalize the ZIP archive
+        await archive.finalize();
+    } catch (error) {
+        console.error("Error fetching completed booklets:", error);
+        res.status(500).json({
+            message: "Failed to fetch and process completed booklets.",
+            error: error.message,
+        });
+    }
+};
+
+// Helper function to generate a PDF from images
+const generatePdfBuffer = (images, bookletFolder) => {
+    return new Promise((resolve, reject) => {
+        const pdfBuffers = [];
+        const doc = new PDFDocument();
+
+        doc.on("data", (chunk) => pdfBuffers.push(chunk));
+        doc.on("end", () => resolve(Buffer.concat(pdfBuffers)));
+        doc.on("error", (err) => reject(err));
+
+        for (const image of images) {
+            const imagePath = path.join(bookletFolder, image);
+            doc.image(imagePath, 0, 0, {
+                fit: [doc.page.width, doc.page.height],
+            });
+            doc.addPage();
+        }
+
+        doc.end();
+    });
+};
+export { generateResult, getPreviousResult, downloadResultByName, getCompletedBooklets };
