@@ -7,6 +7,8 @@ import convertJSONToCSV from "../../services/jsonToCsv.js";
 import Marks from "../../models/EvaluationModels/marksModel.js";
 import Task from "../../models/taskModels/taskModel.js";
 import AnswerPdf from "../../models/EvaluationModels/studentAnswerPdf.js";
+import QuestionDefinition from "../../models/schemeModel/questionDefinitionSchema.js";
+import User from "../../models/authModels/User.js";
 import { __dirname } from "../../server.js";
 import { isValidObjectId } from "../../services/mongoIdValidation.js";
 
@@ -194,7 +196,6 @@ const downloadResultByName = async (req, res) => {
     }
 };
 
-
 const getCompletedBooklets = async (req, res) => {
     const { id } = req.params;
 
@@ -203,7 +204,7 @@ const getCompletedBooklets = async (req, res) => {
             return res.status(400).json({ message: "Invalid task ID." });
         }
 
-        const task = await Task.findById(id);
+        const task = await Task.findById(id).populate("userId", "email");
 
         if (!task) {
             return res.status(404).json({ message: "Task not found" });
@@ -214,6 +215,21 @@ const getCompletedBooklets = async (req, res) => {
         if (booklets.length === 0) {
             return res.status(404).json({ message: "No completed booklets found" });
         }
+
+        // Fetch all tasks for the subject and map user emails to taskIds
+        const tasks = await Task.find({ subjectCode: task.subjectCode }).populate("userId", "email");
+        const taskUserMap = tasks.reduce((map, t) => {
+            if (t.userId && t.userId.email) {
+                map[t._id] = t.userId.email;
+            }
+            return map;
+        }, {});
+
+        // Construct results with evaluator details
+        const results = booklets.map((booklet) => ({
+            answerPdfId: booklet._id,
+            evaluatedBy: taskUserMap[booklet.taskId] || "Unknown",
+        }));
 
         // Set up the response headers for streaming the ZIP file
         res.setHeader("Content-Type", "application/zip");
@@ -254,8 +270,21 @@ const getCompletedBooklets = async (req, res) => {
                 });
             }
 
+            // Fetch marks data for this booklet
+            const marksData = await Marks.find({ answerPdfId: booklet._id });
+            const questionDefinitions = await QuestionDefinition.find({
+                _id: { $in: marksData.map((m) => m.questionDefinitionId) },
+            });
+
             // Generate the PDF for this booklet
-            const pdfBuffer = await generatePdfBuffer(images, bookletFolder, booklet.answerPdfName);
+            const pdfBuffer = await generatePdfBuffer(
+                images,
+                bookletFolder,
+                booklet.answerPdfName,
+                results,
+                marksData, 
+                questionDefinitions 
+            );
 
             // Add the PDF buffer to the ZIP archive
             archive.append(pdfBuffer, { name: `${booklet.answerPdfName}.pdf` });
@@ -273,7 +302,7 @@ const getCompletedBooklets = async (req, res) => {
 };
 
 // Helper function to generate a PDF from images
-const generatePdfBuffer = (images, bookletFolder, bookletName) => {
+const generatePdfBuffer = async (images, bookletFolder, bookletName, results, marksData, questionDefinitions) => {
     return new Promise((resolve, reject) => {
         const pdfBuffers = [];
         const doc = new PDFDocument();
@@ -306,14 +335,14 @@ const generatePdfBuffer = (images, bookletFolder, bookletName) => {
         const startX = 50; // Starting X position
         const startY = doc.y; // Starting Y position
         const rowHeight = 25; // Height of each row
-        const columnWidths = [80, 80, 60, 100, 150]; // Adjusted column widths
+        const columnWidths = [80, 80, 80, 150, 150]; // Adjusted column widths
 
         const columns = [
-            { title: "Questions", x: startX, width: columnWidths[0] },
-            { title: "Answer", x: startX + columnWidths[0], width: columnWidths[1] },
+            { title: "Question", x: startX, width: columnWidths[0] },
+            { title: "Marks", x: startX + columnWidths[0], width: columnWidths[1] },
             { title: "Page No.", x: startX + columnWidths[0] + columnWidths[1], width: columnWidths[2] },
             { title: "Time", x: startX + columnWidths[0] + columnWidths[1] + columnWidths[2], width: columnWidths[3] },
-            { title: "Evaluated By", x: startX + columnWidths[0] + columnWidths[1] + columnWidths[2] + columnWidths[3], width: columnWidths[4] },
+            { title: "Evaluator", x: startX + columnWidths[0] + columnWidths[1] + columnWidths[2] + columnWidths[3], width: columnWidths[4] },
         ];
 
         // Add table headers
@@ -322,20 +351,23 @@ const generatePdfBuffer = (images, bookletFolder, bookletName) => {
             doc.text(column.title, column.x, startY, { width: column.width, align: "left" });
         }
 
-        // Add table rows with static example data
+        // Add rows from marks data
         doc.fontSize(10).font("Helvetica");
-        for (let i = 0; i < 5; i++) {
-            const rowY = startY + (i + 1) * rowHeight;
+        marksData.forEach((mark, index) => {
+            const question = questionDefinitions.find(q => q._id === mark.questionDefinitionId);
+            const rowY = startY + (index + 1) * rowHeight;
 
-            doc.text(`Q${i + 1}`, columns[0].x, rowY, { width: columns[0].width, align: "left" }); // Example short question
-            doc.text(`A${i + 1}`, columns[1].x, rowY, { width: columns[1].width, align: "left" }); // Example short answer
-            doc.text(`${i + 2}`, columns[2].x, rowY, { width: columns[2].width, align: "left" }); // Example page number
-            doc.text(`12:30 PM`, columns[3].x, rowY, { width: columns[3].width, align: "left" }); // Example time
-            doc.text(`Evaluator ${i + 1}`, columns[4].x, rowY, { width: columns[4].width, align: "left" }); // Example evaluator name
-        }
+            doc.text(question?.questionsName || "N/A", columns[0].x, rowY, { width: columns[0].width, align: "left" });
+            doc.text(mark.allottedMarks, columns[1].x, rowY, { width: columns[1].width, align: "left" });
+            doc.text(index + 1, columns[2].x, rowY, { width: columns[2].width, align: "left" });
+            doc.text(mark.timerStamps || "N/A", columns[3].x, rowY, { width: columns[3].width, align: "left" });
+            doc.text(results[0]?.evaluatedBy || "N/A", columns[4].x, rowY, { width: columns[4].width, align: "left" });
+        });
 
         doc.end();
     });
 };
+
+
 
 export { generateResult, getPreviousResult, downloadResultByName, getCompletedBooklets };
