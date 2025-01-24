@@ -33,7 +33,8 @@ async function createInitialUser() {
                     "Create Schema",
                     "Schema Structure",
                     "Tasks",
-                    "Booklets"
+                    "Booklets",
+                    "Generate Result"
                 ]
             });
 

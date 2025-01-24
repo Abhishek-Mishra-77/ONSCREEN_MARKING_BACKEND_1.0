@@ -7,7 +7,8 @@ import {
     getSubjectById,
     getAllSubjects,
     updateSubject,
-    getAllSubjectBasedOnClassId
+    getAllSubjectBasedOnClassId,
+    subjectsWithTasks
 } from "../../controllers/classControllers/subjectControllers.js";
 import authMiddleware from "../../Middlewares/authMiddleware.js";
 
@@ -21,5 +22,6 @@ router.delete("/remove/subject/:id", authMiddleware, removeSubject);
 router.get("/getbyid/subject/:id", authMiddleware, getSubjectById);
 router.get("/getall/subject", authMiddleware, getAllSubjects);
 router.get("/getallsubjectbasedonclass/:classId", authMiddleware, getAllSubjectBasedOnClassId);
+router.get("/get/subjectswithtasks", subjectsWithTasks);
 
 export default router;

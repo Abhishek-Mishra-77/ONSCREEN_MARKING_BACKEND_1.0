@@ -1,5 +1,7 @@
 import Subject from "../../models/classModel/subjectModel.js";
+import Task from "../../models/taskModels/taskModel.js";
 import { isValidObjectId } from "../../services/mongoIdValidation.js";
+
 
 
 /* -------------------------------------------------------------------------- */
@@ -43,8 +45,6 @@ const createSubject = async (req, res) => {
         return res.status(500).json({ message: "An error occurred while creating the subject." });
     }
 };
-
-
 
 /* -------------------------------------------------------------------------- */
 /*                           REMOVE SUBJECT                                   */
@@ -155,6 +155,33 @@ const updateSubject = async (req, res) => {
     }
 };
 
+const subjectsWithTasks = async (req, res) => {
+    try {
+        const subjects = await Subject.find();
+        if (!subjects || subjects.length === 0) {
+            return res.status(404).json({ message: "No subjects found." });
+        }
+
+        const subjectCodes = subjects.map((subject) => subject.code);
+
+        const tasks = await Task.find({ subjectCode: { $in: subjectCodes } });
+
+        if (!tasks || tasks.length === 0) {
+            return res.status(404).json({ message: "No tasks assigned to any subject." });
+        }
+
+        const assignedSubjectCodes = new Set(tasks.map((task) => task.subjectCode));
+
+        const subjectsWithTasks = subjects.filter((subject) =>
+            assignedSubjectCodes.has(subject.code)
+        );
+
+        return res.status(200).json({ subjects: subjectsWithTasks });
+    } catch (error) {
+        console.error("Error fetching subjects with tasks:", error);
+        return res.status(500).json({ message: "An error occurred.", error: error.message });
+    }
+};
 
 /* -------------------------------------------------------------------------- */
 /*                           GET ALL SUBJECTS BY CLASS  ID                    */
@@ -177,4 +204,12 @@ const getAllSubjectBasedOnClassId = async (req, res) => {
 }
 
 
-export { createSubject, removeSubject, getSubjectById, getAllSubjects, updateSubject, getAllSubjectBasedOnClassId };
+export {
+    createSubject,
+    removeSubject,
+    getSubjectById,
+    getAllSubjects,
+    updateSubject,
+    getAllSubjectBasedOnClassId,
+    subjectsWithTasks
+};

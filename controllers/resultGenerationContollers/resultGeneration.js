@@ -1,43 +1,52 @@
 import fs from "fs";
 import path from "path";
+import csvToJson from "../../services/csvToJson.js";
+import convertJSONToCSV from "../../services/jsonToCsv.js";
 import Marks from "../../models/EvaluationModels/marksModel.js";
 import Task from "../../models/taskModels/taskModel.js";
-import AnswerPdf from '../../models/EvaluationModels/studentAnswerPdf.js';
-import csvToJson from '../../services/csvToJson.js';
-import convertJSONToCSV from '../../services/jsonToCsv.js';
+import AnswerPdf from "../../models/EvaluationModels/studentAnswerPdf.js";
 import { __dirname } from "../../server.js";
 
 const generateResult = async (req, res) => {
     const { subjectcode } = req.body;
-
-    const { csvFilePath } = req.files;
-
-    console.log(csvFilePath);
-    
+    const uploadedCsv = req.file;
 
     try {
-        // Step 1: Ensure the main resultFolder exists
-        const mainDir = path.join(__dirname, '../../..');
-        const resultFolderPath = path.join(mainDir, 'resultFolder');
-
-        if (!fs.existsSync(resultFolderPath)) {
-            fs.mkdirSync(resultFolderPath, { recursive: true });
+        if (!subjectcode) {
+            return res.status(400).json({ message: "Subject code is required." });
         }
 
-        if (!subjectcode || !csvFilePath) {
-            return res.status(400).json({ message: "Subject code and CSV file path are required." });
+        if (!uploadedCsv) {
+            return res.status(400).json({ message: "No CSV file uploaded." });
         }
 
-        // Step 2: Parse the uploaded CSV file
-        const csvData = await csvToJson(csvFilePath);
+        // Create necessary folders
+        const resultFolder = path.join(__dirname, "resultFolder", subjectcode);
+        const tempFolder = path.join(__dirname, "temp");
+        if (!fs.existsSync(tempFolder)) fs.mkdirSync(tempFolder, { recursive: true });
+        if (!fs.existsSync(resultFolder)) fs.mkdirSync(resultFolder, { recursive: true });
 
-        // Step 3: Fetch tasks for the subject code
-        const tasks = await Task.find({ subjectCode: subjectcode });
+        // Save uploaded CSV temporarily
+        const tempCsvPath = path.join(tempFolder, uploadedCsv.originalname);
+        fs.writeFileSync(tempCsvPath, fs.readFileSync(uploadedCsv.path));
+
+        // Convert uploaded CSV to JSON
+        const csvData = await csvToJson(tempCsvPath);
+
+        // Fetch tasks and generate results
+        const tasks = await Task.find({ subjectCode: subjectcode }).populate("userId", "email");
         if (tasks.length === 0) {
             return res.status(404).json({ message: "No tasks found." });
         }
 
-        // Get all AnswerPdfs with status=true for the fetched tasks
+        // Map taskId to user email
+        const userMap = tasks.reduce((map, task) => {
+            if (task.userId && task.userId.email) {
+                map[task._id] = task.userId.email;
+            }
+            return map;
+        }, {});
+
         const taskIds = tasks.map((task) => task._id);
         const completedBooklets = await AnswerPdf.find({ taskId: { $in: taskIds }, status: true });
 
@@ -45,46 +54,139 @@ const generateResult = async (req, res) => {
             return res.status(404).json({ message: "No completed booklets found." });
         }
 
-        // Step 4: Prepare results
-        const results = await Promise.all(
-            csvData.map(async (row) => {
-                const barcode = row.BARCODE;
-                const booklet = completedBooklets.find(b => b.answerPdfName?.startsWith(barcode));
-
-                if (!booklet) {
-                    return { ...row, MARKS: 0, EVALUATEDBY: "N/A" };
+        const generatingResults = await Promise.all(
+            completedBooklets.map(async (booklet) => {
+                const barcode = booklet.answerPdfName?.split("_")[0];
+                if (!barcode) {
+                    return {
+                        status: "false",
+                        message: "Barcode name not found",
+                        bookletName: booklet.answerPdfName,
+                        barcode: "",
+                    };
                 }
 
-                // Fetch marks for the current booklet
                 const marks = await Marks.find({ answerPdfId: booklet._id });
                 const totalMarks = marks.reduce((sum, mark) => sum + mark.allottedMarks, 0);
 
+                // Get evaluator's email from the userMap
+                const evaluatedBy = userMap[booklet.taskId] || "Unknown";
+
                 return {
-                    ...row,
-                    MARKS: totalMarks,
-                    EVALUATEDBY: "user1, user2"
+                    status: "true",
+                    barcode: barcode,
+                    totalMarks: totalMarks,
+                    evaluatedBy: evaluatedBy,
                 };
             })
         );
 
-        // Step 5: Convert results to CSV and save
-        const csvOutput = convertJSONToCSV(results);
-        const outputDir = path.join(resultFolderPath, subjectcode);
-        const outputFilePath = path.join(outputDir, 'results.csv');
+        // Match barcodes from the CSV with generatingResults
+        const finalResults = csvData.map((row) => {
+            const matchingResult = generatingResults.find(
+                (result) => result.barcode === row.BARCODE
+            );
 
-        // Ensure the subject code directory exists
-        if (!fs.existsSync(outputDir)) {
-            fs.mkdirSync(outputDir, { recursive: true });
+            if (matchingResult) {
+                return {
+                    ...row,
+                    MARKS: matchingResult.totalMarks,
+                    EVALUATEDBY: matchingResult.evaluatedBy,
+                };
+            }
+
+            // If no match is found, return the row with no marks/evaluation
+            return {
+                ...row,
+                MARKS: "N/A",
+                EVALUATEDBY: "N/A",
+            };
+        });
+
+        // Convert final results to CSV
+        const newCsvData = convertJSONToCSV(finalResults);
+        if (!newCsvData) {
+            return res.status(500).json({ message: "Failed to generate CSV." });
         }
 
-        // Write the CSV file, overriding if it exists
-        fs.writeFileSync(outputFilePath, csvOutput);
+        const resultCsvPath = path.join(resultFolder, "result.csv");
+        fs.writeFileSync(resultCsvPath, newCsvData);
 
-        return res.status(200).json({ message: "Results generated successfully.", filePath: outputFilePath });
+        // Send the CSV file to the frontend
+        res.setHeader("Content-Type", "text/csv");
+        res.setHeader("Content-Disposition", `attachment; filename="result.csv"`);
+        res.send(newCsvData);
+
+        // Clean up temp folder
+        fs.rmSync(tempFolder, { recursive: true, force: true });
     } catch (error) {
         console.error("Error generating results:", error);
         return res.status(500).json({ message: "Failed to generate result", error: error.message });
     }
 };
 
-export { generateResult };
+const getPreviousResult = async (req, res) => {
+    const { subjectcode } = req.query;
+
+    try {
+        if (!subjectcode) {
+            return res.status(400).json({ message: "Subject code is required." });
+        }
+
+        const resultFolderPath = path.join(__dirname, "resultFolder", subjectcode);
+
+        if (!fs.existsSync(resultFolderPath)) {
+            return res.status(404).json({ message: "No results found for this subject code." });
+        }
+
+        const files = fs.readdirSync(resultFolderPath);
+        if (files.length === 0) {
+            return res.status(404).json({ message: "No results found for this subject code." });
+        }
+
+        const results = files.map((filename) => {
+            const filePath = path.join(resultFolderPath, filename);
+            const stats = fs.statSync(filePath);
+
+            return {
+                filename: filename,
+                time: stats.mtime.toISOString(),
+            };
+        });
+
+        return res.status(200).json({ results });
+    } catch (error) {
+        console.error("Error retrieving previous results:", error);
+        return res.status(500).json({ message: "Failed to retrieve results", error: error.message });
+    }
+};
+
+const downloadResultByName = async (req, res) => {
+    const { subjectcode, filename } = req.query;
+
+    try {
+        if (!subjectcode || !filename) {
+            return res.status(400).json({ message: "Subject code and filename are required." });
+        }
+
+        const resultFolderPath = path.join(__dirname, "resultFolder", subjectcode);
+
+        if (!fs.existsSync(resultFolderPath)) {
+            return res.status(404).json({ message: "No results found for this subject code." });
+        }
+
+        const filePath = path.join(resultFolderPath, filename);
+        if (!fs.existsSync(filePath)) {
+            return res.status(404).json({ message: "Result file not found." });
+        }
+
+        res.setHeader("Content-Type", "text/csv");
+        res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+        fs.createReadStream(filePath).pipe(res);
+    } catch (error) {
+        console.error("Error downloading result:", error);
+        return res.status(500).json({ message: "Failed to download result", error: error.message });
+    }
+};
+
+export { generateResult, getPreviousResult, downloadResultByName };
