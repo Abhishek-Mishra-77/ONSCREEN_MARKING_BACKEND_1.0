@@ -110,8 +110,9 @@ const assigningTask = async (req, res) => {
         const allocatedIncrement = previousAllocations + pdfsToBeAssigned.length || 0;
 
         // Ensure `evaluation_pending` and `evaluated` are valid counts
-        const evaluationPendingCount = await AnswerPdf.countDocuments({ status: false }) || 0;
-        const evaluatedCount = await AnswerPdf.countDocuments({ status: true }) || 0;
+        const evaluationPendingCount = await AnswerPdf.countDocuments({ status: false, taskId: savedTask._id }) || 0;
+        const evaluatedCount = await AnswerPdf.countDocuments({ status: true, taskId: savedTask._id }) || 0;
+
 
         // Update the SubjectFolder document
         await SubjectFolderModel.findOneAndUpdate(
@@ -303,15 +304,13 @@ const getAssignTaskById = async (req, res) => {
 
 
         // Save the extracted images' details in the AnswerPdfImage collection
-        const imageDocs = imageFiles.map((imageFileName) => ({
+        const imageDocs = imageFiles.map((imageFileName, i) => ({
             answerPdfId: currentPdf._id,
             name: imageFileName,
-            status: "notVisited"
+            status: i === 0 ? "visited" : "notVisited"
         }));
 
         let insertedImages = await AnswerPdfImage.insertMany(imageDocs);
-
-
 
         return res.status(200).json({
             task,
@@ -498,40 +497,78 @@ const getAllTasksBasedOnSubjectCode = async (req, res) => {
     }
 }
 
-
 const completedBookletHandler = async (req, res) => {
     const { answerpdfid } = req.params;
 
     try {
+        // Validate answerPdfId
         if (!isValidObjectId(answerpdfid)) {
             return res.status(400).json({ message: "Invalid task ID." });
         }
 
         const currentPdf = await AnswerPdf.findOne({ _id: answerpdfid });
-
         if (!currentPdf) {
             return res.status(404).json({ message: "No PDF found for the current file index." });
         }
 
-        const answerPdfImages = await AnswerPdfImage.find({ answerPdfId: currentPdf._id });
-
-        for (const answerPdfImage of answerPdfImages) {
-            const iconExists = await Icon.findOne({ answerPdfImageId: answerPdfImage._id });
-            if (!iconExists) {
-                return res.status(404).json({ message: " Ensure all answer sheets are annotated/marked.", success: false });
-            }
+        const task = await Task.findById(currentPdf.taskId);
+        if (!task) {
+            return res.status(404).json({ message: "Task not found." });
         }
 
+        // Find all tasks related to the same subjectCode
+        const tasks = await Task.find({ subjectCode: task.subjectCode });
+
+        // Check if all images are annotated
+        const answerPdfImages = await AnswerPdfImage.find({ answerPdfId: currentPdf._id });
+        const iconsCheck = await Promise.all(
+            answerPdfImages.map(async (answerPdfImage) => {
+                const iconExists = await Icon.findOne({ answerPdfImageId: answerPdfImage._id });
+                return iconExists;
+            })
+        );
+
+        if (iconsCheck.includes(null)) {
+            return res.status(404).json({ message: "Ensure all answer sheets are annotated/marked.", success: false });
+        }
+
+        // Update AnswerPdf status to 'true'
         await AnswerPdf.findByIdAndUpdate(currentPdf._id, { status: true });
 
-        res.status(200).json({ message: "All images have annotated/marked.. The AnswerPdf status has been updated.", success: true });
+        let totalBooklets = 0;
+        let completedBooklets = 0;
+
+        // Process each task and update the booklet counts
+        for (const currentTask of tasks) {
+            const answerPdfs = await AnswerPdf.find({ taskId: currentTask._id, status: true });
+            totalBooklets += currentTask.totalBooklets;
+            completedBooklets += answerPdfs.length;
+        }
+
+        const subjectFolderDetails = await SubjectFolderModel.findOne({ folderName: task.subjectCode });
+        if (!subjectFolderDetails) {
+            return res.status(404).json({ message: "Subject folder not found" });
+        }
+
+        // Update folder details
+        subjectFolderDetails.evaluated = completedBooklets;
+        subjectFolderDetails.evaluation_pending = totalBooklets - completedBooklets;
+        await subjectFolderDetails.save();
+
+        // Check if all booklets are completed
+        if (completedBooklets === totalBooklets) {
+            task.status = "success";
+            await task.save();
+            return res.status(200).json({ message: "Task is completed", success: true });
+        }
+
+        res.status(200).json({ message: "All images have been annotated/marked.", success: true });
 
     } catch (error) {
-        console.error("Error fetching tasks:", error);
-        res.status(500).json({ message: "Failed to fetch tasks", error: error.message });
+        console.error("Error in completedBookletHandler:", error);
+        res.status(500).json({ message: "Failed to complete task", error: error.message });
     }
 };
-
 
 const checkTaskCompletionHandler = async (req, res) => {
     const { id } = req.params;

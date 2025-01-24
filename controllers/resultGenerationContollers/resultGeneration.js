@@ -81,6 +81,8 @@ const generateResult = async (req, res) => {
             })
         );
 
+        console.log(generatingResults)
+
         // Match barcodes from the CSV with generatingResults
         const finalResults = csvData.map((row) => {
             const matchingResult = generatingResults.find(
@@ -94,8 +96,6 @@ const generateResult = async (req, res) => {
                     EVALUATEDBY: matchingResult.evaluatedBy,
                 };
             }
-
-            // If no match is found, return the row with no marks/evaluation
             return {
                 ...row,
                 MARKS: "N/A",

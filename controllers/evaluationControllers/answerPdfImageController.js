@@ -1,6 +1,5 @@
 import fs from "fs";
 import path from "path";
-
 import AnswerPdfImage from "../../models/EvaluationModels/answerPdfImageModel.js";
 import { isValidObjectId } from "../../services/mongoIdValidation.js";
 import { __dirname } from "../../server.js";
@@ -46,7 +45,6 @@ const updateAnswerPdfImageById = async (req, res) => {
     }
 };
 
-
 const savedAnswerImages = async (req, res) => {
     const { subjectcode, bookletName, imageName } = req.body;
 
@@ -88,6 +86,5 @@ const savedAnswerImages = async (req, res) => {
         res.status(500).json({ message: "Error saving the image", error });
     }
 };
-
 
 export { getAnswerPdfImages, updateAnswerPdfImageById, savedAnswerImages }
