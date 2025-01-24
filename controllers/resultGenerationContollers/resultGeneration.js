@@ -112,13 +112,15 @@ const generateResult = async (req, res) => {
         const resultCsvPath = path.join(resultFolder, "result.csv");
         fs.writeFileSync(resultCsvPath, newCsvData);
 
-        // Send the CSV file to the frontend
-        res.setHeader("Content-Type", "text/csv");
-        res.setHeader("Content-Disposition", `attachment; filename="result.csv"`);
-        res.send(newCsvData);
-
         // Clean up temp folder
         fs.rmSync(tempFolder, { recursive: true, force: true });
+
+        // Send JSON response to the frontend
+        return res.status(200).json({
+            message: "Results generated successfully.",
+            data: finalResults,
+            csvSavedPath: resultCsvPath,
+        });
     } catch (error) {
         console.error("Error generating results:", error);
         return res.status(500).json({ message: "Failed to generate result", error: error.message });
@@ -180,9 +182,10 @@ const downloadResultByName = async (req, res) => {
             return res.status(404).json({ message: "Result file not found." });
         }
 
-        res.setHeader("Content-Type", "text/csv");
-        res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
-        fs.createReadStream(filePath).pipe(res);
+        const result = await csvToJson(filePath);
+
+        return res.status(200).json({ result });
+
     } catch (error) {
         console.error("Error downloading result:", error);
         return res.status(500).json({ message: "Failed to download result", error: error.message });
