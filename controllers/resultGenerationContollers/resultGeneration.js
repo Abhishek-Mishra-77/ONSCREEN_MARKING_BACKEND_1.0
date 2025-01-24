@@ -233,8 +233,6 @@ const getCompletedBooklets = async (req, res) => {
                 `completedFolder/${task.subjectCode}/${booklet.answerPdfName}`
             );
 
-            console.log(`Processing folder: ${bookletFolder}`);
-
             if (!fs.existsSync(bookletFolder)) {
                 return res.status(404).json({
                     message: `Folder not found for booklet: ${booklet.answerPdfName}`,
@@ -257,7 +255,7 @@ const getCompletedBooklets = async (req, res) => {
             }
 
             // Generate the PDF for this booklet
-            const pdfBuffer = await generatePdfBuffer(images, bookletFolder);
+            const pdfBuffer = await generatePdfBuffer(images, bookletFolder, booklet.answerPdfName);
 
             // Add the PDF buffer to the ZIP archive
             archive.append(pdfBuffer, { name: `${booklet.answerPdfName}.pdf` });
@@ -275,7 +273,7 @@ const getCompletedBooklets = async (req, res) => {
 };
 
 // Helper function to generate a PDF from images
-const generatePdfBuffer = (images, bookletFolder) => {
+const generatePdfBuffer = (images, bookletFolder, bookletName) => {
     return new Promise((resolve, reject) => {
         const pdfBuffers = [];
         const doc = new PDFDocument();
@@ -284,15 +282,60 @@ const generatePdfBuffer = (images, bookletFolder) => {
         doc.on("end", () => resolve(Buffer.concat(pdfBuffers)));
         doc.on("error", (err) => reject(err));
 
+        // Add all images to the PDF
         for (const image of images) {
             const imagePath = path.join(bookletFolder, image);
             doc.image(imagePath, 0, 0, {
                 fit: [doc.page.width, doc.page.height],
             });
-            doc.addPage();
+            doc.addPage(); // Add a new page for the next image
+        }
+
+        // Add the summary page
+        doc.addPage();
+
+        // Add booklet name at the top
+        doc.fontSize(18).text(`Booklet Name: ${bookletName || "N/A"}`, {
+            align: "center",
+            underline: true,
+        });
+
+        doc.moveDown(2); // Move down for the table
+
+        // Define table layout
+        const startX = 50; // Starting X position
+        const startY = doc.y; // Starting Y position
+        const rowHeight = 25; // Height of each row
+        const columnWidths = [80, 80, 60, 100, 150]; // Adjusted column widths
+
+        const columns = [
+            { title: "Questions", x: startX, width: columnWidths[0] },
+            { title: "Answer", x: startX + columnWidths[0], width: columnWidths[1] },
+            { title: "Page No.", x: startX + columnWidths[0] + columnWidths[1], width: columnWidths[2] },
+            { title: "Time", x: startX + columnWidths[0] + columnWidths[1] + columnWidths[2], width: columnWidths[3] },
+            { title: "Evaluated By", x: startX + columnWidths[0] + columnWidths[1] + columnWidths[2] + columnWidths[3], width: columnWidths[4] },
+        ];
+
+        // Add table headers
+        doc.fontSize(12).font("Helvetica-Bold");
+        for (const column of columns) {
+            doc.text(column.title, column.x, startY, { width: column.width, align: "left" });
+        }
+
+        // Add table rows with static example data
+        doc.fontSize(10).font("Helvetica");
+        for (let i = 0; i < 5; i++) {
+            const rowY = startY + (i + 1) * rowHeight;
+
+            doc.text(`Q${i + 1}`, columns[0].x, rowY, { width: columns[0].width, align: "left" }); // Example short question
+            doc.text(`A${i + 1}`, columns[1].x, rowY, { width: columns[1].width, align: "left" }); // Example short answer
+            doc.text(`${i + 2}`, columns[2].x, rowY, { width: columns[2].width, align: "left" }); // Example page number
+            doc.text(`12:30 PM`, columns[3].x, rowY, { width: columns[3].width, align: "left" }); // Example time
+            doc.text(`Evaluator ${i + 1}`, columns[4].x, rowY, { width: columns[4].width, align: "left" }); // Example evaluator name
         }
 
         doc.end();
     });
 };
+
 export { generateResult, getPreviousResult, downloadResultByName, getCompletedBooklets };
