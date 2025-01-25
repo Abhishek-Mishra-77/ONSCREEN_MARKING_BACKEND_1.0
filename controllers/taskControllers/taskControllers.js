@@ -79,7 +79,7 @@ const assigningTask = async (req, res) => {
         const unassignedPdfs = allPdfs.filter(pdf => !assignedPdfNames.includes(pdf));
 
         if (unassignedPdfs.length === 0) {
-            return res.status(400).json({ message: "All PDFs are already assigned." });
+            return res.status(400).json({ message: "All booklets are already assigned." });
         }
 
         // Determine the number of PDFs to assign in this request
@@ -137,7 +137,7 @@ const assigningTask = async (req, res) => {
         session.endSession();
 
         return res.status(201).json({
-            message: `${pdfsToBeAssigned.length} PDFs assigned successfully.`,
+            message: `${pdfsToBeAssigned.length} Booklets assigned successfully.`,
             assignedPdfs: pdfsToBeAssigned,
         });
     } catch (error) {
@@ -492,7 +492,7 @@ const getAllTasksBasedOnSubjectCode = async (req, res) => {
             return res.status(400).json({ message: "Subject code is required." });
         }
 
-        const tasks = await Task.find({ subjectCode: subjectcode });
+        const tasks = await Task.find({ subjectCode: subjectcode }).populate('userId', 'name email');
 
         res.status(200).json(tasks);
     } catch (error) {

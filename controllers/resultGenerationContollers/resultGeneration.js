@@ -8,9 +8,9 @@ import Marks from "../../models/EvaluationModels/marksModel.js";
 import Task from "../../models/taskModels/taskModel.js";
 import AnswerPdf from "../../models/EvaluationModels/studentAnswerPdf.js";
 import QuestionDefinition from "../../models/schemeModel/questionDefinitionSchema.js";
-import User from "../../models/authModels/User.js";
 import { __dirname } from "../../server.js";
 import { isValidObjectId } from "../../services/mongoIdValidation.js";
+
 
 
 const generateResult = async (req, res) => {
@@ -216,6 +216,8 @@ const getCompletedBooklets = async (req, res) => {
             return res.status(404).json({ message: "No completed booklets found" });
         }
 
+
+
         // Fetch all tasks for the subject and map user emails to taskIds
         const tasks = await Task.find({ subjectCode: task.subjectCode }).populate("userId", "email");
         const taskUserMap = tasks.reduce((map, t) => {
@@ -276,14 +278,15 @@ const getCompletedBooklets = async (req, res) => {
                 _id: { $in: marksData.map((m) => m.questionDefinitionId) },
             });
 
+
             // Generate the PDF for this booklet
             const pdfBuffer = await generatePdfBuffer(
                 images,
                 bookletFolder,
                 booklet.answerPdfName,
                 results,
-                marksData, 
-                questionDefinitions 
+                marksData,
+                questionDefinitions
             );
 
             // Add the PDF buffer to the ZIP archive
@@ -311,13 +314,13 @@ const generatePdfBuffer = async (images, bookletFolder, bookletName, results, ma
         doc.on("end", () => resolve(Buffer.concat(pdfBuffers)));
         doc.on("error", (err) => reject(err));
 
-        // Add all images to the PDF
+
         for (const image of images) {
             const imagePath = path.join(bookletFolder, image);
             doc.image(imagePath, 0, 0, {
                 fit: [doc.page.width, doc.page.height],
             });
-            doc.addPage(); // Add a new page for the next image
+            doc.addPage();
         }
 
         // Add the summary page
@@ -329,13 +332,13 @@ const generatePdfBuffer = async (images, bookletFolder, bookletName, results, ma
             underline: true,
         });
 
-        doc.moveDown(2); // Move down for the table
+        doc.moveDown(2);
 
-        // Define table layout
-        const startX = 50; // Starting X position
-        const startY = doc.y; // Starting Y position
-        const rowHeight = 25; // Height of each row
-        const columnWidths = [80, 80, 80, 150, 150]; // Adjusted column widths
+
+        const startX = 50;
+        const startY = doc.y;
+        const rowHeight = 25;
+        const columnWidths = [80, 80, 80, 150, 150];
 
         const columns = [
             { title: "Question", x: startX, width: columnWidths[0] },
@@ -350,24 +353,115 @@ const generatePdfBuffer = async (images, bookletFolder, bookletName, results, ma
         for (const column of columns) {
             doc.text(column.title, column.x, startY, { width: column.width, align: "left" });
         }
-
         // Add rows from marks data
         doc.fontSize(10).font("Helvetica");
         marksData.forEach((mark, index) => {
-            const question = questionDefinitions.find(q => q._id === mark.questionDefinitionId);
+            const question = questionDefinitions.find(q => q._id.toString() === mark.questionDefinitionId.toString());
             const rowY = startY + (index + 1) * rowHeight;
 
-            doc.text(question?.questionsName || "N/A", columns[0].x, rowY, { width: columns[0].width, align: "left" });
+            console.log(question);
+
+            doc.text(`Q${question?.questionsName}` || "N/A", columns[0].x, rowY, { width: columns[0].width, align: "left" });
             doc.text(mark.allottedMarks, columns[1].x, rowY, { width: columns[1].width, align: "left" });
             doc.text(index + 1, columns[2].x, rowY, { width: columns[2].width, align: "left" });
             doc.text(mark.timerStamps || "N/A", columns[3].x, rowY, { width: columns[3].width, align: "left" });
             doc.text(results[0]?.evaluatedBy || "N/A", columns[4].x, rowY, { width: columns[4].width, align: "left" });
         });
 
+        // Calculate Total Marks
+        const totalMarks = marksData.reduce((sum, mark) => sum + (Number(mark.allottedMarks) || 0), 0);
+
+        // Print Total Marks at the bottom-right corner
+        const totalMarksText = `Total Marks: ${totalMarks}`;
+        const totalMarksX = startX + columnWidths.reduce((sum, width) => sum + width, 0) - 200;
+        const totalMarksY = startY + (marksData.length + 1) * rowHeight + 20;
+
+        doc.fontSize(12).font("Helvetica-Bold").text(totalMarksText, totalMarksX, totalMarksY, {
+            width: 150,
+            align: "right",
+        });
+
         doc.end();
     });
 };
 
+// const generatePdfBuffer = async (images, bookletFolder, bookletName, results, marksData, questionDefinitions) => {
+//     return new Promise((resolve, reject) => {
+//         const pdfBuffers = [];
+//         const doc = new PDFDocument();
 
+//         doc.on("data", (chunk) => pdfBuffers.push(chunk));
+//         doc.on("end", () => resolve(Buffer.concat(pdfBuffers)));
+//         doc.on("error", (err) => reject(err));
+
+//         // Add all images to the PDF
+//         for (const image of images) {
+//             const imagePath = path.join(bookletFolder, image);
+//             doc.image(imagePath, 0, 0, {
+//                 fit: [doc.page.width, doc.page.height],
+//             });
+//             doc.addPage();
+//         }
+
+//         // Add the summary page
+//         doc.addPage();
+
+//         // Add booklet name at the top
+//         doc.fontSize(18).text(`Booklet Name: ${bookletName || "N/A"}`, {
+//             align: "center",
+//             underline: true,
+//         });
+
+//         doc.moveDown(2);
+
+//         const startX = 50;
+//         const startY = doc.y;
+//         const rowHeight = 25;
+//         const columnWidths = [80, 80, 150, 150]; // Removed the column for Page No.
+//         // The column widths are adjusted accordingly
+
+//         const columns = [
+//             { title: "Question", x: startX, width: columnWidths[0] },
+//             { title: "Marks", x: startX + columnWidths[0], width: columnWidths[1] },
+//             // { title: "Page No.", x: startX + columnWidths[0] + columnWidths[1], width: columnWidths[2] }, // Removed Page No.
+//             { title: "Time", x: startX + columnWidths[0] + columnWidths[1], width: columnWidths[2] },
+//             { title: "Evaluator", x: startX + columnWidths[0] + columnWidths[1] + columnWidths[2], width: columnWidths[3] },
+//         ];
+
+//         // Add table headers
+//         doc.fontSize(12).font("Helvetica-Bold");
+//         for (const column of columns) {
+//             doc.text(column.title, column.x, startY, { width: column.width, align: "left" });
+//         }
+
+//         // Add rows from marks data
+//         doc.fontSize(10).font("Helvetica");
+//         marksData.forEach((mark, index) => {
+//             const question = questionDefinitions.find(q => q._id === mark.questionDefinitionId);
+//             const rowY = startY + (index + 1) * rowHeight;
+
+//             doc.text(question?.questionsName || `Q${index + 1}`, columns[0].x, rowY, { width: columns[0].width, align: "left" });
+//             doc.text(mark.allottedMarks, columns[1].x, rowY, { width: columns[1].width, align: "left" });
+//             // doc.text(index + 1, columns[2].x, rowY, { width: columns[2].width, align: "left" }); // Commented out Page No.
+//             doc.text(mark.timerStamps || "N/A", columns[2].x, rowY, { width: columns[2].width, align: "left" });
+//             doc.text(results[0]?.evaluatedBy || "N/A", columns[3].x, rowY, { width: columns[3].width, align: "left" });
+//         });
+
+//         // Calculate Total Marks
+//         const totalMarks = marksData.reduce((sum, mark) => sum + (Number(mark.allottedMarks) || 0), 0);
+
+//         // Print Total Marks at the bottom-right corner
+//         const totalMarksText = `Total Marks: ${totalMarks}`;
+//         const totalMarksX = startX + columnWidths.reduce((sum, width) => sum + width, 0) - 200;
+//         const totalMarksY = startY + (marksData.length + 1) * rowHeight + 20;
+
+//         doc.fontSize(12).font("Helvetica-Bold").text(totalMarksText, totalMarksX, totalMarksY, {
+//             width: 150,
+//             align: "right",
+//         });
+
+//         doc.end();
+//     });
+// };
 
 export { generateResult, getPreviousResult, downloadResultByName, getCompletedBooklets };
