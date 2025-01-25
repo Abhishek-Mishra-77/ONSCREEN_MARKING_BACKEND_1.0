@@ -11,8 +11,6 @@ import QuestionDefinition from "../../models/schemeModel/questionDefinitionSchem
 import { __dirname } from "../../server.js";
 import { isValidObjectId } from "../../services/mongoIdValidation.js";
 
-
-
 const generateResult = async (req, res) => {
     const { subjectcode } = req.body;
     const uploadedCsv = req.file;
@@ -359,11 +357,9 @@ const generatePdfBuffer = async (images, bookletFolder, bookletName, results, ma
             const question = questionDefinitions.find(q => q._id.toString() === mark.questionDefinitionId.toString());
             const rowY = startY + (index + 1) * rowHeight;
 
-            console.log(question);
-
             doc.text(`Q${question?.questionsName}` || "N/A", columns[0].x, rowY, { width: columns[0].width, align: "left" });
             doc.text(mark.allottedMarks, columns[1].x, rowY, { width: columns[1].width, align: "left" });
-            doc.text(index + 1, columns[2].x, rowY, { width: columns[2].width, align: "left" });
+            doc.text(index + 2, columns[2].x, rowY, { width: columns[2].width, align: "left" });
             doc.text(mark.timerStamps || "N/A", columns[3].x, rowY, { width: columns[3].width, align: "left" });
             doc.text(results[0]?.evaluatedBy || "N/A", columns[4].x, rowY, { width: columns[4].width, align: "left" });
         });

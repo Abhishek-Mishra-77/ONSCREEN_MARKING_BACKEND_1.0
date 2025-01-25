@@ -206,20 +206,17 @@ const removeAssignedTask = async (req, res) => {
 const getAssignTaskById = async (req, res) => {
     const { id } = req.params;
 
-    // Log and respond with an error if the process fails
     try {
         if (!isValidObjectId(id)) {
             return res.status(400).json({ message: "Invalid task ID." });
         }
 
         const task = await Task.findById(id);
-
         if (!task) {
             return res.status(404).json({ message: "Task not found" });
         }
 
         const subject = await Subject.findOne({ code: task.subjectCode });
-
         if (!subject) {
             return res.status(404).json({ message: "Subject not found (create subject)." });
         }
@@ -233,101 +230,250 @@ const getAssignTaskById = async (req, res) => {
         }
 
         const schemaDetails = await Schema.findOne({ _id: courseSchemaDetails.schemaId });
-
         if (!schemaDetails) {
             return res.status(404).json({ message: "Schema not found." });
         }
 
-        const { subjectCode, currentFileIndex, totalBooklets } = task;
-
-        // Validate currentFileIndex
-        if (currentFileIndex < 1 || currentFileIndex > totalBooklets) {
-            return res.status(400).json({ message: "Invalid current file index." });
-        }
-
         const rootFolder = path.join(__dirname, "processedFolder");
-        const subjectFolder = path.join(rootFolder, subjectCode);
+        const subjectFolder = path.join(rootFolder, task.subjectCode);
 
         if (!fs.existsSync(subjectFolder)) {
             return res.status(404).json({ message: "Subject folder not found." });
         }
 
-        // Ensure `extractedBooklets` folder exists
         const extractedBookletsFolder = path.join(subjectFolder, "extractedBooklets");
         if (!fs.existsSync(extractedBookletsFolder)) {
             fs.mkdirSync(extractedBookletsFolder, { recursive: true });
         }
 
-        // Get all assigned PDFs for this task
         const assignedPdfs = await AnswerPdf.find({ taskId: task._id });
-
         if (assignedPdfs.length === 0) {
             return res.status(404).json({ message: "No PDFs assigned to this task." });
         }
 
-        // Get the current PDF based on the currentFileIndex
-        const currentPdf = assignedPdfs[currentFileIndex - 1];
-
+        const currentPdf = assignedPdfs[task.currentFileIndex - 1];
         if (!currentPdf) {
             return res.status(404).json({ message: "No PDF found for the current file index." });
         }
 
         const pdfPath = path.join(subjectFolder, currentPdf.answerPdfName);
-
         if (!fs.existsSync(pdfPath)) {
             return res.status(404).json({ message: `PDF file ${currentPdf.answerPdfName} not found.` });
         }
 
-
         task.status = "active";
         await task.save();
 
-        // Check if the images have already been extracted and stored in the database
         const extractedImages = await AnswerPdfImage.find({ answerPdfId: currentPdf._id });
 
-        let extractedBookletPath = `processedFolder/${task.subjectCode}/extractedBooklets/${path.basename(currentPdf.answerPdfName, '.pdf')}`;
+        let extractedBookletPath = `processedFolder/${task.subjectCode}/extractedBooklets/${path.basename(currentPdf.answerPdfName, ".pdf")}`;
 
         if (extractedImages.length > 0) {
+            const visibleImages = extractedImages.filter((_, index) => !schemaDetails.hiddenPage?.includes(index));
             return res.status(200).json({
                 task,
                 answerPdfDetails: currentPdf,
                 schemaDetails,
                 extractedBookletPath,
-                answerPdfImages: extractedImages
+                answerPdfImages: visibleImages,
             });
         }
 
-        // Create a folder for the current PDF in `extractedBooklets`
         const currentPdfFolder = path.join(extractedBookletsFolder, path.basename(currentPdf.answerPdfName, ".pdf"));
         if (!fs.existsSync(currentPdfFolder)) {
             fs.mkdirSync(currentPdfFolder, { recursive: true });
         }
 
-        // Extract images from the PDF
         const imageFiles = await extractImagesFromPdf(pdfPath, currentPdfFolder);
 
-
-        // Save the extracted images' details in the AnswerPdfImage collection
         const imageDocs = imageFiles.map((imageFileName, i) => ({
             answerPdfId: currentPdf._id,
             name: imageFileName,
-            status: i === 0 ? "visited" : "notVisited"
+            status: i === 0 ? "visited" : "notVisited",
         }));
 
-        let insertedImages = await AnswerPdfImage.insertMany(imageDocs);
+        const insertedImages = await AnswerPdfImage.insertMany(imageDocs);
+
+        // Define directory structure for completedFolder
+        const completedFolder = path.join(__dirname, "completedFolder");
+        const subjectCompletedFolder = path.join(completedFolder, task.subjectCode);
+        const bookletFolder = path.join(subjectCompletedFolder, path.basename(currentPdf.answerPdfName, ".pdf"));
+
+        if (!fs.existsSync(completedFolder)) fs.mkdirSync(completedFolder);
+        if (!fs.existsSync(subjectCompletedFolder)) fs.mkdirSync(subjectCompletedFolder);
+        if (!fs.existsSync(bookletFolder)) fs.mkdirSync(bookletFolder);
+
+        const hiddenPages = schemaDetails.hiddenPage || [];
+        const hiddenImages = insertedImages.filter((_, index) => hiddenPages.includes(index));
+
+        for (const image of hiddenImages) {
+            const sourceImagePath = path.join(currentPdfFolder, image.name);
+            const destinationImagePath = path.join(bookletFolder, image.name);
+
+            if (fs.existsSync(sourceImagePath)) {
+                fs.copyFileSync(sourceImagePath, destinationImagePath);
+            } else {
+                console.error(`Hidden image not found: ${sourceImagePath}`);
+            }
+        }
+
+        const visibleImages = insertedImages.filter((_, index) => !hiddenPages.includes(index));
 
         return res.status(200).json({
             task,
             answerPdfDetails: currentPdf,
             schemaDetails,
             extractedBookletPath,
-            answerPdfImages: insertedImages
+            answerPdfImages: visibleImages, // Send only non-hidden images
         });
     } catch (error) {
-        console.error("Error fetching task:", error);
+        console.error("Error fetching task:", error.message);
         res.status(500).json({ message: "Failed to process task", error: error.message });
     }
 };
+
+// inittal one 
+// const getAssignTaskById = async (req, res) => {
+//     const { id } = req.params;
+
+//     // Log and respond with an error if the process fails
+//     try {
+//         if (!isValidObjectId(id)) {
+//             return res.status(400).json({ message: "Invalid task ID." });
+//         }
+
+//         const task = await Task.findById(id);
+
+//         if (!task) {
+//             return res.status(404).json({ message: "Task not found" });
+//         }
+
+//         const subject = await Subject.findOne({ code: task.subjectCode });
+
+//         if (!subject) {
+//             return res.status(404).json({ message: "Subject not found (create subject)." });
+//         }
+
+//         const courseSchemaDetails = await SubjectSchemaRelation.findOne({
+//             subjectId: subject._id,
+//         });
+
+//         if (!courseSchemaDetails) {
+//             return res.status(404).json({ message: "Schema not found for the subject (upload master answer and master question)." });
+//         }
+
+//         const schemaDetails = await Schema.findOne({ _id: courseSchemaDetails.schemaId });
+
+//         if (!schemaDetails) {
+//             return res.status(404).json({ message: "Schema not found." });
+//         }
+
+//         const { subjectCode, currentFileIndex, totalBooklets } = task;
+
+//         // Validate currentFileIndex
+//         if (currentFileIndex < 1 || currentFileIndex > totalBooklets) {
+//             return res.status(400).json({ message: "Invalid current file index." });
+//         }
+
+//         const rootFolder = path.join(__dirname, "processedFolder");
+//         const subjectFolder = path.join(rootFolder, subjectCode);
+
+//         if (!fs.existsSync(subjectFolder)) {
+//             return res.status(404).json({ message: "Subject folder not found." });
+//         }
+
+//         // Ensure `extractedBooklets` folder exists
+//         const extractedBookletsFolder = path.join(subjectFolder, "extractedBooklets");
+//         if (!fs.existsSync(extractedBookletsFolder)) {
+//             fs.mkdirSync(extractedBookletsFolder, { recursive: true });
+//         }
+
+//         // Get all assigned PDFs for this task
+//         const assignedPdfs = await AnswerPdf.find({ taskId: task._id });
+
+//         if (assignedPdfs.length === 0) {
+//             return res.status(404).json({ message: "No PDFs assigned to this task." });
+//         }
+
+//         // Get the current PDF based on the currentFileIndex
+//         const currentPdf = assignedPdfs[currentFileIndex - 1];
+
+//         if (!currentPdf) {
+//             return res.status(404).json({ message: "No PDF found for the current file index." });
+//         }
+
+//         const pdfPath = path.join(subjectFolder, currentPdf.answerPdfName);
+
+//         if (!fs.existsSync(pdfPath)) {
+//             return res.status(404).json({ message: `PDF file ${currentPdf.answerPdfName} not found.` });
+//         }
+
+
+//         task.status = "active";
+//         await task.save();
+
+//         // Check if the images have already been extracted and stored in the database
+//         const extractedImages = await AnswerPdfImage.find({ answerPdfId: currentPdf._id });
+
+//         let extractedBookletPath = `processedFolder/${task.subjectCode}/extractedBooklets/${path.basename(currentPdf.answerPdfName, '.pdf')}`;
+
+//         if (extractedImages.length > 0) {
+//             return res.status(200).json({
+//                 task,
+//                 answerPdfDetails: currentPdf,
+//                 schemaDetails,
+//                 extractedBookletPath,
+//                 answerPdfImages: extractedImages
+//             });
+//         }
+
+//         // Create a folder for the current PDF in `extractedBooklets`
+//         const currentPdfFolder = path.join(extractedBookletsFolder, path.basename(currentPdf.answerPdfName, ".pdf"));
+//         if (!fs.existsSync(currentPdfFolder)) {
+//             fs.mkdirSync(currentPdfFolder, { recursive: true });
+//         }
+
+//         // Extract images from the PDF
+//         const imageFiles = await extractImagesFromPdf(pdfPath, currentPdfFolder);
+
+
+//         // Save the extracted images' details in the AnswerPdfImage collection
+//         const imageDocs = imageFiles.map((imageFileName, i) => ({
+//             answerPdfId: currentPdf._id,
+//             name: imageFileName,
+//             status: i === 0 ? "visited" : "notVisited"
+//         }));
+
+//         let insertedImages = await AnswerPdfImage.insertMany(imageDocs);
+//         // Update the currentFileIndex in the task
+
+//         //   // Define directory structure
+//         //     const mainFolder = path.join(__dirname, "completedFolder");
+//         //     const complededFolder = path.join(mainFolder, subjectcode);
+//         //     const bookletFolder = path.join(subjectFolder, currentPdf.answerPdfName);
+
+//         // // Ensure directories exist
+//         // if (!fs.existsSync(mainFolder)) fs.mkdirSync(mainFolder);
+//         // if (!fs.existsSync(subjectFolder)) fs.mkdirSync(complededFolder);
+//         // if (!fs.existsSync(bookletFolder)) fs.mkdirSync(bookletFolder);
+
+//         // const hiddenPage = schemaDetails.hiddenPage;
+
+
+//         return res.status(200).json({
+//             task,
+//             answerPdfDetails: currentPdf,
+//             schemaDetails,
+//             extractedBookletPath,
+//             answerPdfImages: insertedImages
+//         });
+
+//     } catch (error) {
+//         console.error("Error fetching task:", error);
+//         res.status(500).json({ message: "Failed to process task", error: error.message });
+//     }
+// };
+
 
 const getAllTaskHandler = async (req, res) => {
     try {

@@ -81,12 +81,16 @@ const userLogin = async (req, res) => {
         return res.status(400).json({ message: "Email is required" });
     }
 
+    if (!password) {
+        return res.status(400).json({ message: "Password is required" });
+    }
+
     try {
         if (password && type === 'password') {
             const user = await User.findOne({ email });
 
             if (!user) {
-                return res.status(401).json({ message: "Invalid email or password" });
+                return res.status(401).json({ message: "User not found. Please sign up first." });
             }
 
             const isPasswordValid = await bcrypt.compare(password, user.password);
