@@ -332,7 +332,6 @@ const generatePdfBuffer = async (images, bookletFolder, bookletName, results, ma
 
         doc.moveDown(2);
 
-
         const startX = 50;
         const startY = doc.y;
         const rowHeight = 25;
