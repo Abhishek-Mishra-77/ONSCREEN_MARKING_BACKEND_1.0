@@ -168,7 +168,6 @@ const processingBookletsBySocket = async (req, res) => {
     }
 };
 
-
 const servingBooklets = async (req, res) => {
     const { subjectCode, bookletName } = req.query;
 
@@ -275,39 +274,50 @@ const getAllBookletsName = async (req, res) => {
 
         if (!courseSchemaDetails) {
             return res.status(404).json({ message: "Schema not found for the subject (upload master answer and master question)." });
+            // Check if subject exists
         }
 
         let schema = await Schema.findOne({ _id: courseSchemaDetails.schemaId });
 
+        // Fetch course schema details for the subject
         if (!schema) {
             return res.status(404).json({ message: "Schema not found." });
         }
 
+        // Check if course schema details exist
         const scannedDataPath = path.join(__dirname, "scannedFolder", subjectCode);
 
         if (!fs.existsSync(scannedDataPath)) {
             return res.status(404).json({ message: "Scanned folder not found." });
+            // Fetch the schema using the course schema details
         }
 
+        // Check if schema exists
         const files = fs.readdirSync(scannedDataPath).filter(file => file.endsWith(".pdf"));
 
         if (files.length === 0) {
             return res.status(404).json({ message: "No booklets found." });
         }
+        // Define path for the scanned data folder
 
         res.status(200).json({ message: "Booklets found", booklets: files });
+        // Check if scanned data folder exists
     } catch (error) {
         console.error("Error fetching booklets:", error);
         res.status(500).json({ message: "Internal server error", error: error.message });
     }
+    // Read PDF files from the scanned data folder
 }
 
+// Check if any booklets (PDFs) are found
 const processingBookletsManually = async (req, res) => {
     const { subjectCode, bookletName } = req.body;
 
     // Step 1: Validate the input
+    // Respond with the list of booklet names
     if (!subjectCode || !bookletName) {
         return res.status(400).json({ message: "Subject code and booklet name are required." });
+        // Handle errors
     }
 
     try {

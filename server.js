@@ -26,6 +26,7 @@ import iconRoutes from './routes/evaluationRoutes/iconRoutes.js'
 import { subjectFolderWatcher } from "./controllers/studentControllers/subjectFolder.js";
 import bookletProcessingRoutes from "./routes/bookletProcessingRoutes/bookletProcessingRoutes.js";
 import resultGenerationRoutes from "./routes/resultGenerationRoutes/resultGenerationRoutes.js";
+import analyticRoutes from "./routes/analyticRoutes/analyticRoutes.js";
 
 /* -------------------------------------------------------------------------- */
 /*                           SERVER CONFIGURATION                             */
@@ -55,7 +56,6 @@ app.use(cors());
 subjectFolderWatcher(io);
 
 
-
 app.use('/uploadedPdfs', express.static(path.join(__dirname, 'uploadedPdfs')));
 app.use('/processedFolder', express.static(path.join(__dirname, 'processedFolder')));
 
@@ -78,6 +78,7 @@ app.use("/api/evaluation/marks", marksRoutes)
 app.use("/api/evaluation/icons", iconRoutes)
 app.use('/api/bookletprocessing', bookletProcessingRoutes)
 app.use('/api/resultgeneration', resultGenerationRoutes)
+app.use('/api/analytic', analyticRoutes)
 
 
 // Socket.IO Connection event
@@ -85,7 +86,7 @@ io.on('connection', (socket) => {
     console.log("A client connected");
     socket.on('disconnect', () => {
         console.log("A client disconnected");
-    });
+    }); 
 });
 
 /* -------------------------------------------------------------------------- */
